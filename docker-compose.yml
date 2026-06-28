@@ -59,7 +59,25 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    env_file: ./backend/.env
+    environment:
+      - DATABASE_URL
+      - REDIS_URL
+      - QDRANT_URL
+      - QDRANT_API_KEY
+      - MINIO_ENDPOINT
+      - MINIO_ACCESS_KEY
+      - MINIO_SECRET_KEY
+      - MINIO_SECURE
+      - GCS_BUCKET_NAME
+      - GCS_CREDENTIALS_JSON
+      - LITELLM_API_KEY
+      - DEEPSEEK_API_KEY
+      - PROXYCURL_API_KEY
+      - JWT_SECRET_KEY
+      - JWT_ALGORITHM
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+      - JWT_REFRESH_TOKEN_EXPIRE_DAYS
+      - SENTRY_DSN_BACKEND
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,13 +93,33 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
-    env_file: ./frontend/.env
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL
+      - NEXT_PUBLIC_SENTRY_DSN
     restart: unless-stopped
 
   celery_worker:
     build: ./backend
     command: celery -A app.worker worker --loglevel=info
-    env_file: ./backend/.env
+    environment:
+      - DATABASE_URL
+      - REDIS_URL
+      - QDRANT_URL
+      - QDRANT_API_KEY
+      - MINIO_ENDPOINT
+      - MINIO_ACCESS_KEY
+      - MINIO_SECRET_KEY
+      - MINIO_SECURE
+      - GCS_BUCKET_NAME
+      - GCS_CREDENTIALS_JSON
+      - LITELLM_API_KEY
+      - DEEPSEEK_API_KEY
+      - PROXYCURL_API_KEY
+      - JWT_SECRET_KEY
+      - JWT_ALGORITHM
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+      - JWT_REFRESH_TOKEN_EXPIRE_DAYS
+      - SENTRY_DSN_BACKEND
     depends_on:
       postgres:
         condition: service_healthy
