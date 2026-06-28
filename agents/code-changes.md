@@ -10,6 +10,37 @@
 
 ---
 
+## [CHANGE-001] 2026-06-28
+Agent: DevOps Engineer
+Session: 20260628-DO-P001
+Prompt ref: PROMPT-001
+JIRA story: RF-6
+Branch: feature/RF-6-repo-structure
+
+### Files Modified
+- README.md - created, project overview and tech stack
+- docker-compose.yml - created, placeholder for PROMPT-002
+- .github/workflows/.gitkeep - placeholder for CI workflows
+- agents/ - created, copied all agent files from .agents/
+- frontend/.gitkeep - placeholder for Next.js app
+- backend/.gitkeep - placeholder for FastAPI app
+- docker/.gitkeep - placeholder for Docker files
+- scripts/.gitkeep - placeholder for utility scripts
+
+### What Changed
+Created the full project directory structure for RecruitFlow AI. Added README.md with project name, tech stack summary, and setup instructions placeholder. Created docker-compose.yml placeholder. Added .gitkeep files to all empty directories to ensure git tracks them. Copied all agent files from .agents/ into agents/ for repository visibility.
+
+### Test Coverage
+N/A - repository structure setup only
+
+### Handover to QA
+No QA needed for repo structure. Next DevOps prompt (PROMPT-002) will populate docker-compose.yml.
+
+### Notes
+.python-version file exists locally but was intentionally excluded from commit. It may be added to .gitignore or committed in a future prompt.
+
+---
+
 ## [CHANGE-000] TEMPLATE ENTRY - DO NOT DELETE
 
 Agent: [Agent Name]
