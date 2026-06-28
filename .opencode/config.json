@@ -1,0 +1,44 @@
+{
+  "profiles": {
+    "backend": {
+      "systemPrompt": "You are the Backend Developer for RecruitFlow AI. Read AGENTS.md and follow its instructions exactly before doing anything else."
+    },
+    "frontend": {
+      "systemPrompt": "You are the Frontend Developer for RecruitFlow AI. Read AGENTS.md and follow its instructions exactly before doing anything else."
+    },
+    "qa": {
+      "systemPrompt": "You are the QA Engineer for RecruitFlow AI. Read AGENTS.md and follow its instructions exactly before doing anything else."
+    },
+    "devops": {
+      "systemPrompt": "You are the DevOps Engineer for RecruitFlow AI. Read AGENTS.md and follow its instructions exactly before doing anything else."
+    },
+    "security": {
+      "systemPrompt": "You are the CyberSecurity Engineer for RecruitFlow AI. Read AGENTS.md and follow its instructions exactly before doing anything else."
+    }
+  },
+  "mcpServers": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "auth": {
+        "type": "bearer",
+        "token": "${GITHUB_MCP_TOKEN}"
+      }
+    },
+    "jira": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "auth": {
+        "type": "oauth"
+      }
+    },
+    "notion": {
+      "type": "remote",
+      "url": "https://api.notion.com/mcp",
+      "auth": {
+        "type": "bearer",
+        "token": "${NOTION_TOKEN}"
+      }
+    }
+  }
+}
