@@ -9,7 +9,6 @@
 - JIRA project key: RF
 - Active sprint: RF-Sprint-1 (28 Jun - 5 Jul 2026)
 - Repository: github.com/akshatvardhan/recruitflow-ai (update with actual URL)
-- Notion workspace: RecruitFlow AI
 - GCP project: recruitflow-ai-500719
 
 ---
@@ -20,7 +19,6 @@ Do not use emojis anywhere in this project unless explicitly requested by the pr
 This applies without exception to:
 
 - JIRA issue descriptions, comments, and summaries
-- Notion pages and documentation
 - Code comments and inline documentation
 - Git commit messages and PR descriptions
 - All agent files: progress.md, code-changes.md, prompts.md, agent-run-log.md
@@ -32,13 +30,10 @@ Use plain text, dashes, and standard punctuation instead.
 
 ## Agent Self-Attribution
 
-Every JIRA comment, Notion edit, and agent-run-log entry must begin with a signed header.
+Every JIRA comment and agent-run-log entry must begin with a signed header.
 
 Format for JIRA comments:
 [AGENT: Backend Dev] - RF-10 - 2026-06-30
-
-Format for Notion edits (append to page edit log):
-| 2026-06-30 | Backend Dev | Added POST /api/v1/documents/upload contract |
 
 Format for agent-run-log.md entries:
 Session ID: 20260630-BD-P004
@@ -138,7 +133,7 @@ Expected unblock date: When RF-10 is in "Completed"
 Cancellation comment format:
 [AGENT: DevOps] - RF-14 - 2026-06-30
 Status: Cancelled
-Reason: Notion workspace setup was completed manually by project owner. No further action needed.
+Reason: Notion has been removed from the project. No further action needed.
 
 ---
 
@@ -167,7 +162,6 @@ Handover to QA:
 
 code-changes.md updated: yes
 progress.md updated: yes
-Notion updated: {yes / not required}
 
 ---
 
@@ -238,7 +232,6 @@ Tests passing: {X}/{Y}
 progress.md updated: yes/no
 code-changes.md updated: yes/no
 JIRA updated: yes/no
-Notion updated: yes/no
 
 Blockers encountered: {none / description}
 Notes: {anything the project owner should know}
@@ -288,34 +281,6 @@ Findings:
 - [HIGH] {description} - {file:line}
 - [MEDIUM] {description} - {file:line}
 
-Notion updated: /Security Reviews/{sprint}-{feature} yes/no
-
----
-
-## Notion Pages (4 pages only)
-
-All other documentation lives in the repository.
-
-Page 1: /RecruitFlow AI/API Contracts/
-- Maintained by: Backend Dev
-- One sub-page per feature module
-- Updated whenever an endpoint is added or changed
-
-Page 2: /RecruitFlow AI/Local Setup Guide
-- Maintained by: DevOps Engineer
-- Step-by-step guide to run the full stack locally
-- Updated whenever setup steps change
-
-Page 3: /RecruitFlow AI/Environment Variables
-- Maintained by: DevOps Engineer
-- Full list of all env vars, purpose, which service provides them
-- No actual values, only names and descriptions
-
-Page 4: /RecruitFlow AI/Security Reviews/
-- Maintained by: CyberSecurity Engineer
-- One sub-page per sprint per reviewed feature
-- Updated after every staging review
-
 ---
 
 ## MCP Configuration
@@ -326,16 +291,47 @@ Tokens location: .env file (never in config.json, never committed)
 MCP servers:
 - GitHub: repo and PR read/write, CI status
 - JIRA: Atlassian Rovo MCP (https://mcp.atlassian.com/v1/mcp)
-- Notion: read/write scoped to RecruitFlow AI workspace
 
 Per-agent MCP access:
-- Backend Dev: JIRA (own stories), Notion (API Contracts write), GitHub (branches + commits)
-- Frontend Dev: JIRA (own stories), Notion (API Contracts read), GitHub (branches + commits)
+- Backend Dev: JIRA (own stories), GitHub (branches + commits)
+- Frontend Dev: JIRA (own stories), GitHub (branches + commits)
 - QA Engineer: JIRA (read all + create bugs), GitHub (read PRs + CI)
-- DevOps Engineer: JIRA (own stories), Notion (Setup Guide + Env Vars write), GitHub (full)
-- CyberSecurity: JIRA (read all + create security tasks), Notion (Security Reviews write), GitHub (PR review)
+- DevOps Engineer: JIRA (own stories), GitHub (full)
+- CyberSecurity: JIRA (read all + create security tasks), GitHub (PR review)
 
 Load only the MCP servers your role needs per session to preserve context window.
+
+---
+
+## .env.example Integrity
+
+The .env file must never exist in this project. Secrets are managed via Doppler. If a .env file is found at any point, delete it immediately. Only .env.example is allowed and it contains no secret values.
+
+.env.example is documentation. It must always exist in the repository root.
+Never delete .env.example under any circumstances, even when migrating to external secret managers (Doppler, Vault, etc.). It serves as the canonical list of all required environment variables for the project.
+
+---
+
+## Pre-Commit Checks (mandatory before every commit)
+
+Every coding agent must run these checks locally before committing. Never push code that fails local checks.
+
+Backend (run from /backend directory):
+  ruff check .
+  black --check .
+  mypy app/
+  pytest tests/ -v
+
+Frontend (run from /frontend directory):
+  npm run build
+  npx eslint .
+  npx prettier --check .
+
+Rules:
+- All checks must pass with zero errors before committing
+- If any check fails, fix it before committing
+- Never use --no-verify to bypass pre-commit hooks
+- Never commit with known lint errors and leave them for CI to catch
 
 ---
 

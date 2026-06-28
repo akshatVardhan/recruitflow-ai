@@ -66,7 +66,7 @@ Backend API:
 Database:
 - GCP Cloud SQL - PostgreSQL 15 micro (db-f1-micro)
 - Connection via Cloud SQL connector (not direct TCP)
-- Budget alert: INR 1000/month on the recruitflow-ai GCP project
+- Budget alert: INR 1000/month on the recruitflow-ai-500719 GCP project
 
 File storage:
 - GCP Cloud Storage bucket: recruitflow-ai-documents
