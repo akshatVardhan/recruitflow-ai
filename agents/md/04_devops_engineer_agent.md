@@ -46,62 +46,9 @@ Services:
 - celery_worker: Celery worker connected to Redis
 
 All services must have health checks.
-Persistent volumes for postgres, qdrant, and minio data.
-All services use restart: unless-stopped.
-
-### Local Setup Commands
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/akshatvardhan/recruitflow-ai.git
-   cd recruitflow-ai
-   ```
-
-2. Create environment files:
-   ```bash
-   cp .env.example backend/.env
-   cp .env.example frontend/.env
-   # Edit backend/.env and frontend/.env with your values
-   ```
-
-3. Start the full development stack:
-   ```bash
-   docker compose up -d
-   ```
-
-4. Run database migrations:
-   ```bash
-   docker compose exec backend alembic upgrade head
-   ```
-
-5. View service logs:
-   ```bash
-   docker compose logs -f
-   ```
-
-6. Stop all services:
-   ```bash
-   docker compose down
-   ```
-
-7. Stop and remove volumes (destroys all data):
-   ```bash
-   docker compose down -v
-   ```
-
-### Accessing Services
-
-| Service    | URL                          |
-|------------|------------------------------|
-| Frontend   | http://localhost:3000        |
-| Backend    | http://localhost:8000        |
-| API Docs   | http://localhost:8000/docs   |
-| MinIO      | http://localhost:9001        |
-| PostgreSQL | localhost:5432               |
-| Redis      | localhost:6379               |
-| Qdrant     | http://localhost:6333        |
-
-All services must be healthy before backend starts (uses depends_on with condition: service_healthy).
+Persistent volumes for postgres and qdrant data.
+Start command: docker compose up -d
+All services must be healthy before backend starts (use depends_on with condition: service_healthy).
 
 ---
 

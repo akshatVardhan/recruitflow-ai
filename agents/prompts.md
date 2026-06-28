@@ -54,7 +54,7 @@ After completing:
 ### PROMPT-002
 Agent: DevOps Engineer
 JIRA: RF-7
-Status: Done
+Status: Pending
 Depends on: PROMPT-001 Done
 Priority: High
 
@@ -85,7 +85,7 @@ Session: YYYYMMDD-DO-P002
 ### PROMPT-003
 Agent: DevOps Engineer
 JIRA: RF-8
-Status: Done
+Status: Pending
 Depends on: PROMPT-001 Done
 Priority: High
 
