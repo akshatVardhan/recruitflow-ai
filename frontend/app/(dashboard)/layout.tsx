@@ -4,16 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import {
-  FileText,
-  Users,
-  Briefcase,
-  Search,
-  MessageSquare,
-  Menu,
-  X,
-  Building2,
-} from "lucide-react"
+import { FileText, Users, Briefcase, Search, MessageSquare, Menu, X, Building2 } from "lucide-react"
 
 const navItems = [
   { href: "/doc-studio", label: "Doc Studio", icon: FileText },
@@ -24,11 +15,7 @@ const navItems = [
   { href: "/chat", label: "Chat", icon: MessageSquare },
 ]
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
