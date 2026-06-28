@@ -10,7 +10,7 @@
 - Active sprint: RF-Sprint-1 (28 Jun - 5 Jul 2026)
 - Repository: github.com/akshatvardhan/recruitflow-ai (update with actual URL)
 - Notion workspace: RecruitFlow AI
-- GCP project: recruitflow-ai
+- GCP project: recruitflow-ai-500719
 
 ---
 

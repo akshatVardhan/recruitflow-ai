@@ -122,12 +122,12 @@ Task:
 Set up the GCP production infrastructure for RecruitFlow AI.
 
 Steps:
-1. Create GCP project named recruitflow-ai (separate from CommuteWatch)
+1. Create GCP project named recruitflow-ai-500719 (separate from CommuteWatch)
 2. Enable APIs: Cloud Run, Cloud SQL Admin, Cloud Storage, Secret Manager
 3. Create Cloud SQL instance: PostgreSQL 15, tier db-f1-micro, region asia-south1 (Mumbai)
 4. Create Cloud Storage bucket: recruitflow-ai-documents, region asia-south1
 5. Create Cloud Run service placeholder (will deploy actual image in PROMPT-010)
-6. Set budget alert on recruitflow-ai project: INR 1000/month, alerts at 50%, 90%, 100%
+6. Set budget alert on recruitflow-ai-500719 project: INR 1000/month, alerts at 50%, 90%, 100%
 
 Document in Notion /Environment Variables:
 - DATABASE_URL (Cloud SQL connection string format)
