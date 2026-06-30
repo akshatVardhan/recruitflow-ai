@@ -54,7 +54,7 @@ After completing:
 ### PROMPT-002
 Agent: DevOps Engineer
 JIRA: RF-7
-Status: Pending
+Status: Done
 Depends on: PROMPT-001 Done
 Priority: High
 
@@ -85,7 +85,7 @@ Session: YYYYMMDD-DO-P002
 ### PROMPT-003
 Agent: DevOps Engineer
 JIRA: RF-8
-Status: Pending
+Status: Done
 Depends on: PROMPT-001 Done
 Priority: High
 
@@ -114,7 +114,7 @@ Commit message: ci: add backend and frontend pipelines with keep-warm RF-8
 ### PROMPT-004
 Agent: DevOps Engineer
 JIRA: RF-9
-Status: Pending
+Status: Done
 Depends on: nothing (can run parallel to PROMPT-002 and PROMPT-003)
 Priority: High
 
@@ -122,12 +122,12 @@ Task:
 Set up the GCP production infrastructure for RecruitFlow AI.
 
 Steps:
-1. Create GCP project named recruitflow-ai-500719 (separate from CommuteWatch)
+1. Create GCP project named recruitflow-ai (separate from CommuteWatch)
 2. Enable APIs: Cloud Run, Cloud SQL Admin, Cloud Storage, Secret Manager
 3. Create Cloud SQL instance: PostgreSQL 15, tier db-f1-micro, region asia-south1 (Mumbai)
 4. Create Cloud Storage bucket: recruitflow-ai-documents, region asia-south1
 5. Create Cloud Run service placeholder (will deploy actual image in PROMPT-010)
-6. Set budget alert on recruitflow-ai-500719 project: INR 1000/month, alerts at 50%, 90%, 100%
+6. Set budget alert on recruitflow-ai project: INR 1000/month, alerts at 50%, 90%, 100%
 
 Document in Notion /Environment Variables:
 - DATABASE_URL (Cloud SQL connection string format)
@@ -141,7 +141,7 @@ Commit message: chore(infra): document GCP setup and update env example RF-9
 ### PROMPT-005
 Agent: Backend Dev
 JIRA: RF-10
-Status: Pending
+Status: Done
 Depends on: PROMPT-001 Done (repo must exist)
 Priority: High
 
@@ -190,7 +190,7 @@ Commit message: feat(backend): scaffold FastAPI modular monolith RF-10
 ### PROMPT-006
 Agent: Frontend Dev
 JIRA: RF-11
-Status: Pending
+Status: In Progress
 Depends on: PROMPT-001 Done (repo must exist)
 Priority: High
 
@@ -237,7 +237,7 @@ Commit message: feat(frontend): scaffold Next.js app with shell and design syste
 ### PROMPT-007
 Agent: DevOps Engineer
 JIRA: RF-12
-Status: Pending
+Status: Done
 Depends on: PROMPT-001 Done
 Priority: Medium
 
@@ -268,7 +268,7 @@ Commit message: chore(agents): add all agent files and opencode config RF-12
 ### PROMPT-008
 Agent: DevOps Engineer
 JIRA: RF-13
-Status: Pending
+Status: In Progress
 Depends on: PROMPT-007 Done
 Priority: Medium
 
@@ -302,7 +302,7 @@ Commit message: chore(mcp): configure GitHub, JIRA, and Notion MCP integrations 
 ### PROMPT-009
 Agent: DevOps Engineer
 JIRA: RF-14
-Status: Pending
+Status: Done
 Depends on: nothing (can run in parallel)
 Priority: Low
 
