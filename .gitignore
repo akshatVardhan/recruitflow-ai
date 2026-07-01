@@ -1,3 +1,7 @@
+# Agent orchestration - local only, never commit
+.agents/
+agents/
+.opencode/
 
 # Environment variables - never commit
 .env
