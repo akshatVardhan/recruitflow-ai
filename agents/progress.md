@@ -35,12 +35,15 @@ RF-11 - [Frontend] Initialize Next.js project with Tailwind and shadcn/ui
 RF-12 - [DevOps] Create /agents folder with all agent files and templates
 RF-13 - [DevOps] Configure MCP integrations (GitHub + JIRA + Notion)
 RF-14 - [DevOps] Set up Notion workspace structure
+RF-15 - [CyberSec] Configure branch protection and security baseline
+RF-16 - [CyberSec] Remove --reload flag from production Dockerfile
+RF-18 - [Frontend] Upgrade Next.js 14.2 to 16.2.9 with React 19 and ESLint 9
 
 ### In Progress
-(none yet)
+(none)
 
 ### Pending
-RF-15 - [CyberSec] Configure branch protection and security baseline
+(none)
 
 ### Blocked
 (none)
@@ -50,11 +53,11 @@ RF-15 - [CyberSec] Configure branch protection and security baseline
 ## Agent Last Known State
 
 Agent              | Last Prompt | Status      | Branch
-Backend Dev        | PROMPT-005  | Active      | feature/RF-10-fastapi-scaffold
-Frontend Dev       | PROMPT-006  | Active      | feature/RF-11-nextjs-scaffold
+Backend Dev        | PROMPT-005  | Idle        | feature/RF-10-fastapi-scaffold
+Frontend Dev       | PROMPT-006  | Idle        | feature/RF-11-qa-fixes
 QA Engineer        | -           | Idle        | -
 DevOps Engineer    | PROMPT-009  | Idle        | -
-CyberSecurity      | -           | Idle        | -
+CyberSecurity      | PROMPT-010  | Idle        | -
 
 ---
 

@@ -10,6 +10,64 @@
 
 ---
 
+## [CHANGE-011] 2026-07-01
+Agent: Frontend Dev
+Session: 20260701-FD-P011
+Prompt ref: PROMPT-006 (final), PROMPT-NEW (RF-18 upgrade)
+JIRA story: RF-18
+Branch: feature/RF-18-upgrade-nextjs
+
+### Files Modified
+- frontend/package.json - upgraded Next.js 14.2 to 16.2.9, React 18 to 19, ESLint 8 to 9, and all other deps
+- frontend/package-lock.json - regenerated with new dependency tree
+- frontend/tsconfig.json - updated jsx to react-jsx, added .next/dev/types to include
+- frontend/.eslintrc.json - deleted (ESLint 8 format, replaced by flat config)
+- frontend/eslint.config.mjs - created ESLint 9 flat config with next/core-web-vitals
+
+### What Changed
+Upgraded Next.js from 14.2 to 16.2.9 with Turbopack, React 18 to 19 (jsx react-jsx), ESLint 8 to 9 (flat config migration), Vitest 2 to 4, and all associated dependency updates. Reduced vulnerabilities from 33 (1 critical, 7 high) to 2 moderate. Build, ESLint, and Prettier all pass with zero errors.
+
+### Test Coverage
+- npm run build: PASS (Next.js 16 Turbopack)
+- npx eslint .: PASS (zero errors)
+- npx prettier --check .: PASS (all files match style)
+
+### Handover to QA
+Run: cd frontend && npm install && npm run build
+Verify all routes render at localhost:3000
+Run: npx eslint . && npx prettier --check .
+
+### Notes
+ESLint config migrated from .eslintrc.json (ESLint 8) to eslint.config.mjs (ESLint 9 flat config). The lint script changed from "next lint" to "eslint .".
+
+---
+
+## [CHANGE-010] 2026-07-01
+Agent: Frontend Dev
+Session: 20260701-FD-P011
+Prompt ref: PROMPT-006
+JIRA story: RF-11
+Branch: feature/RF-11-qa-fixes
+
+### Files Modified
+- frontend/ (27 files) - Prettier formatting pass across all scaffold files
+
+### What Changed
+Ran Prettier across all 27 frontend scaffold files to fix formatting inconsistencies (quotes, trailing commas, indentation, spacing). The QA fixes from the original feature branch were already on staging; the missing piece was the Prettier formatting pass. Build, ESLint, and Prettier all pass with zero errors now.
+
+### Test Coverage
+- npm run build: PASS
+- npx eslint .: PASS (zero errors)
+- npx prettier --check .: PASS
+
+### Handover to QA
+Confirm all frontend checks pass: npm run build, npx eslint ., npx prettier --check .
+
+### Notes
+This completes PROMPT-006. The scaffold code was already on staging; only Prettier formatting was missing to pass the pre-commit checklist.
+
+---
+
 ## [CHANGE-009] 2026-06-28
 Agent: Frontend Dev
 Session: 20260628-FD-P006
