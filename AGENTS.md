@@ -13,7 +13,7 @@ conversation history or assumptions from previous sessions.
 
 1. Read: .opencode/agents/conventions.md
    Defines your working rules, git conventions, JIRA workflow, story point
-   scale, no-emoji rule, session ID format, comment formats, and Notion pages.
+   scale, no-emoji rule, and session ID format.
    Non-negotiable for every agent.
 
 2. Read: .opencode/agents/progress.md
@@ -74,7 +74,6 @@ After completing the task:
 - Update .opencode/agents/code-changes.md (new entry for this session)
 - Update .opencode/agents/agent-run-log.md (new session entry)
 - Update JIRA via MCP (transition story, add completion comment)
-- Update Notion via MCP if required by your role
 
 ---
 

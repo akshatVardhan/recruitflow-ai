@@ -9,15 +9,14 @@ AI-powered recruitment platform for staffing and recruitment firms.
 - **Database**: PostgreSQL 15, Redis 7, Qdrant (vector DB)
 - **File Storage**: MinIO (dev), GCP Cloud Storage (prod)
 - **LLM**: DeepSeek via LiteLLM
-- **Infrastructure**: Docker Compose (local), GCP Cloud Run (prod), Vercel (frontend)
+- **Infrastructure**: GCP Cloud Run (prod), Vercel (frontend)
 
 ## Setup Instructions
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Python 3.13 (for local backend development)
-- Node.js 20 (for local frontend development)
+- Python 3.13 (for backend)
+- Node.js 20 (for frontend)
 
 ### Local Development
 
@@ -33,16 +32,20 @@ AI-powered recruitment platform for staffing and recruitment firms.
    cp .env.example frontend/.env
    ```
 
-3. Start the full development stack:
+3. Start the backend:
    ```bash
-   docker compose up -d
+   cd backend && uvicorn app.main:app --reload
    ```
 
-4. Access the services:
+4. In a separate terminal, start the frontend:
+   ```bash
+   cd frontend && npm run dev
+   ```
+
+5. Access the services:
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
    - API Docs: http://localhost:8000/docs
-   - MinIO Console: http://localhost:9001
 
 ### Running Without Docker
 
@@ -54,9 +57,7 @@ See the individual `backend/` and `frontend/` README files for local setup instr
 recruitflow-ai/
     frontend/           # Next.js application
     backend/            # FastAPI modular monolith
-    agents/             # AI agent configuration and prompts
     docs/               # Architecture and component documentation
-    docker/             # Docker-related files
     scripts/            # Utility scripts
     .github/workflows/  # CI/CD pipelines
 ```
