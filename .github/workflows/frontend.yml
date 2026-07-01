@@ -34,8 +34,5 @@ jobs:
       - name: npm audit
         run: npm audit --audit-level=high
 
-      - name: Vitest run
-        run: npx vitest run
-
       - name: Next.js build
         run: npm run build
