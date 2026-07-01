@@ -17,6 +17,35 @@
 
 ---
 
+## Session: 20260701-FD-P011 - 2026-07-01
+Agent: Frontend Dev
+Prompt: PROMPT-018 - Upgrade Next.js from 14.x to 16.x
+JIRA story: RF-18
+Branch: feature/RF-18-upgrade-nextjs
+Session started: session start
+Session ended: session end
+Exit status: Complete
+
+Commits made:
+- (pending commit - see below)
+
+Files changed: 7 (frontend/package.json, next.config.mjs, eslint.config.mjs, .eslintrc.json (deleted), tsconfig.json, next-env.d.ts, package-lock.json)
+Tests passing: N/A (no test files yet)
+Build passing: Yes - Next.js 16.2.9 compiled successfully with Turbopack, TypeScript passed
+
+progress.md updated: yes (created)
+code-changes.md updated: yes (created)
+JIRA updated: yes (transitioned to In Progress, assigned, comment posted)
+
+Blockers encountered: 
+- eslint-config-next@16 requires eslint>=9 (upgraded)
+- @vitejs/plugin-react@6 requires vite@^8 (added vite@^8.0.0)
+- @types/react-dom@19.2.17 does not exist (corrected to 19.2.3)
+- next lint CLI command removed in Next.js 16 (replaced with eslint . in lint script)
+- @eslint/eslintrc FlatCompat has circular JSON issue with ESLint 9 (switched to native flat config importing eslint-config-next/core-web-vitals directly)
+
+Notes: Full framework upgrade completed: Next.js 14.2 -> 16.2.9, React 18.3 -> 19.2.7, ESLint 8 -> 9, ESLint flat config, standalone output enabled. PR to be raised after merge of PR #7.
+
 ## Session: 20260701-DO-P010 - 2026-07-01
 Agent: DevOps Engineer
 Prompt: Ad-hoc (Fix Dockerfile --reload flag, create JIRA story for Next.js upgrade)
