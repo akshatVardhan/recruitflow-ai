@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str = ""
+    qdrant_collection_resumes: str = "resumes"
+    qdrant_collection_jds: str = "job_descriptions"
+    qdrant_collection_hr: str = "hr_documents"
 
     minio_endpoint: str = "localhost:9000"
     minio_access_key: str = "minioadmin"
