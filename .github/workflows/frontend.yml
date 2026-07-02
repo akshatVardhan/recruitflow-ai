@@ -7,6 +7,12 @@ on:
       - bugfix/*
     paths:
       - "frontend/**"
+  pull_request:
+    branches:
+      - staging
+      - main
+    paths:
+      - "frontend/**"
 
 jobs:
   lint-and-test:
