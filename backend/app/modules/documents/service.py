@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Optional
 
@@ -6,8 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.storage import upload_file, download_file
+from app.core.storage import delete_file, upload_file, download_file
 from app.modules.documents.models import Document
+
+logger = logging.getLogger(__name__)
 
 
 async def create_document(
@@ -17,7 +20,6 @@ async def create_document(
     title: str,
     doc_type: str,
     file: UploadFile,
-    storage_client: Optional[callable] = None,
 ) -> Document:
     file_bytes = await file.read()
     file_size_kb = len(file_bytes) // 1024
@@ -26,6 +28,7 @@ async def create_document(
     file_ext = file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "bin"
     file_path = f"documents/{client_id}/{doc_id}.{file_ext}"
 
+    # Upload blob to storage first
     await upload_file(
         bucket=settings.doc_upload_bucket,
         key=file_path,
@@ -33,21 +36,27 @@ async def create_document(
         content_type=file.content_type or "application/octet-stream",
     )
 
-    document = Document(
-        id=doc_id,
-        client_id=client_id,
-        user_id=user_id,
-        title=title,
-        doc_type=doc_type,
-        file_path=file_path,
-        file_name=file.filename or "untitled",
-        file_size_kb=file_size_kb,
-        mime_type=file.content_type,
-    )
-    db.add(document)
-    await db.commit()
-    await db.refresh(document)
-    return document
+    # If DB operation fails, clean up the blob
+    try:
+        document = Document(
+            id=doc_id,
+            client_id=client_id,
+            user_id=user_id,
+            title=title,
+            doc_type=doc_type,
+            file_path=file_path,
+            file_name=file.filename or "untitled",
+            file_size_kb=file_size_kb,
+            mime_type=file.content_type,
+        )
+        db.add(document)
+        await db.commit()
+        await db.refresh(document)
+        return document
+    except Exception as e:
+        logger.error(f"DB commit failed after blob upload, cleaning up {file_path}: {e}")
+        await delete_file(bucket=settings.doc_upload_bucket, key=file_path)
+        raise
 
 
 async def get_document(db: AsyncSession, document_id: uuid.UUID) -> Optional[Document]:

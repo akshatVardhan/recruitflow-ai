@@ -1,8 +1,20 @@
 import uuid
 from datetime import datetime
+from enum import StrEnum
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
+
+
+class DocType(StrEnum):
+    resume = "resume"
+    job_description = "job_description"
+    offer_letter = "offer_letter"
+    sop = "sop"
+    performance_report = "performance_report"
+    policy = "policy"
+    contract = "contract"
+    other = "other"
 
 
 class DocumentUploadResponse(BaseModel):

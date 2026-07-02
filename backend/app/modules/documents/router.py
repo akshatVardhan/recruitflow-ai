@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.modules.documents.schemas import DocumentDetailResponse, DocumentStatusResponse, DocumentUploadResponse
+from app.modules.documents.schemas import DocType, DocumentDetailResponse, DocumentStatusResponse, DocumentUploadResponse
 from app.modules.documents.service import create_document, get_document, get_document_status
 
 router = APIRouter()
@@ -14,7 +14,7 @@ router = APIRouter()
 async def upload_document(
     client_id: uuid.UUID = Form(...),
     title: str = Form(...),
-    doc_type: str = Form(...),
+    doc_type: DocType = Form(...),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
