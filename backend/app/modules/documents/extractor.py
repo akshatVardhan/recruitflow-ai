@@ -7,6 +7,7 @@ from docx import Document as DocxDocument
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.storage import download_file
 from app.modules.documents.models import Document
 
@@ -48,7 +49,7 @@ async def extract_document_text(document_id: uuid.UUID, db: AsyncSession) -> str
 
     try:
         file_bytes = await download_file(
-            bucket="recruitflow-documents",  # TODO: use settings.doc_upload_bucket
+            bucket=settings.doc_upload_bucket,
             key=document.file_path,
         )
     except Exception as e:
@@ -56,12 +57,16 @@ async def extract_document_text(document_id: uuid.UUID, db: AsyncSession) -> str
         return None
 
     mime = document.mime_type or ""
-    if "pdf" in mime or document.file_name.lower().endswith(".pdf"):
-        extracted = extract_text_from_pdf(file_bytes)
-    elif "word" in mime or document.file_name.lower().endswith(".docx"):
-        extracted = extract_text_from_docx(file_bytes)
-    else:
-        logger.warning(f"Unsupported mime type '{mime}' for document {document_id}")
+    try:
+        if "pdf" in mime or document.file_name.lower().endswith(".pdf"):
+            extracted = extract_text_from_pdf(file_bytes)
+        elif "word" in mime or document.file_name.lower().endswith(".docx"):
+            extracted = extract_text_from_docx(file_bytes)
+        else:
+            logger.warning(f"Unsupported mime type '{mime}' for document {document_id}")
+            return None
+    except Exception as e:
+        logger.error(f"Failed to parse file for document {document_id}: {e}")
         return None
 
     document.extracted_text = extracted

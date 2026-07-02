@@ -34,9 +34,22 @@ def test_extract_text_from_pdf_with_sample():
 
 def test_extract_text_from_docx_empty():
     """Test DOCX extraction returns a string even for empty doc."""
-    # Minimal DOCX is a zip with specific structure -- use empty bytes for the test
-    # The actual test will be integration-level; here we validate the function signature
-    assert callable(extract_text_from_docx)
+    import io
+    import zipfile
+
+    # Build a minimal valid DOCX (ZIP with required XML files)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("word/document.xml", "<?xml version=\"1.0\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body><w:p><w:r><w:t>Hello World</w:t></w:r></w:p></w:body></w:document>")
+        zf.writestr("[Content_Types].xml", "<?xml version=\"1.0\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"xml\" ContentType=\"application/xml\"/><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>")
+        zf.writestr("_rels/.rels", "<?xml version=\"1.0\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>")
+        zf.writestr("word/_rels/document.xml.rels", "<?xml version=\"1.0\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"></Relationships>")
+    buf.seek(0)
+    docx_bytes = buf.read()
+
+    text = extract_text_from_docx(docx_bytes)
+    assert isinstance(text, str)
+    assert "Hello World" in text
 
 
 @pytest.mark.anyio
