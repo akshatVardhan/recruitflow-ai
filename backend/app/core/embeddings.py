@@ -6,7 +6,7 @@ from typing import Any
 
 from sentence_transformers import SentenceTransformer
 
-from app.core.qdrant import COLLECTIONS, VECTOR_SIZE, get_qdrant_client
+from app.core.qdrant import get_qdrant_client
 
 logger = logging.getLogger(__name__)
 

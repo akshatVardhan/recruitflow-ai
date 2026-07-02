@@ -1,10 +1,9 @@
 """Hybrid retrieval: keyword (PostgreSQL FTS) + tag filter + semantic (Qdrant)."""
 
 import logging
-import uuid
 from typing import Any
 
-from qdrant_client.http.models import Filter, FieldCondition, MatchValue, Range
+from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -1,7 +1,7 @@
 """Tests for RAG agent tools."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -9,11 +9,6 @@ from app.modules.rag.tools import (
     ALL_TOOLS,
     search_documents_fn,
     get_document_by_id_fn,
-    search_documents_tool,
-    get_document_by_id_tool,
-    generate_document_tool,
-    score_resume_tool,
-    list_candidates_tool,
 )
 
 
