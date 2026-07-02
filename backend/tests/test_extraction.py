@@ -6,7 +6,10 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
-from app.modules.documents.extractor import extract_text_from_pdf, extract_text_from_docx
+from app.modules.documents.extractor import (
+    extract_text_from_pdf,
+    extract_text_from_docx,
+)
 
 
 def test_extract_text_from_pdf_with_sample():
