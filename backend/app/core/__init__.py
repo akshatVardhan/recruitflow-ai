@@ -1,1 +1,1 @@
-# trigger
+# ci-fix: mypy non-blocking
