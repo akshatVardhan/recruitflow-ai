@@ -1,1 +1,1 @@
-# fix-feature/RF-20-qdrant-collections
+# ci-feature/RF-20-qdrant-collections
