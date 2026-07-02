@@ -50,7 +50,10 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
         response = await litellm.acompletion(
             model="deepseek/deepseek-v4-flash",
             messages=[
-                {"role": "system", "content": "You are a document metadata extractor. Return only JSON."},
+                {
+                    "role": "system",
+                    "content": "You are a document metadata extractor. Return only JSON.",
+                },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.1,
@@ -77,7 +80,9 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
 async def tag_document(document_id: uuid.UUID, db: AsyncSession) -> dict | None:
     """Fetch document, auto-tag, persist, and return tags."""
     result = await db.execute(
-        select(Document).where(Document.id == document_id, Document.deleted_at.is_(None))
+        select(Document).where(
+            Document.id == document_id, Document.deleted_at.is_(None)
+        )
     )
     document = result.scalar_one_or_none()
     if document is None:
@@ -85,7 +90,9 @@ async def tag_document(document_id: uuid.UUID, db: AsyncSession) -> dict | None:
         return None
 
     if not document.extracted_text:
-        logger.warning(f"Document {document_id} has no extracted text; skipping tagging")
+        logger.warning(
+            f"Document {document_id} has no extracted text; skipping tagging"
+        )
         return None
 
     tags = await auto_tag_document_text(document.extracted_text)

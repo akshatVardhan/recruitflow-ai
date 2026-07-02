@@ -7,9 +7,17 @@ from app.core.database import get_db
 from app.modules.documents.auto_tagger import tag_document
 from app.modules.documents.chunker import chunk_document
 from app.modules.documents.extractor import extract_document_text
-from app.modules.documents.schemas import DocumentDetailResponse, DocumentStatusResponse, DocumentUploadResponse
+from app.modules.documents.schemas import (
+    DocumentDetailResponse,
+    DocumentStatusResponse,
+    DocumentUploadResponse,
+)
 from app.worker import ingest_document
-from app.modules.documents.service import create_document, get_document, get_document_status
+from app.modules.documents.service import (
+    create_document,
+    get_document,
+    get_document_status,
+)
 
 router = APIRouter()
 
@@ -24,7 +32,9 @@ async def chunk_existing_document(
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     if not doc.extracted_text:
-        raise HTTPException(status_code=400, detail="Document has no extracted text; run extract first")
+        raise HTTPException(
+            status_code=400, detail="Document has no extracted text; run extract first"
+        )
 
     chunks = chunk_document(doc)
     return {
@@ -32,6 +42,7 @@ async def chunk_existing_document(
         "chunk_count": len(chunks),
         "chunks": chunks,
     }
+
 
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=201)
 async def upload_document(

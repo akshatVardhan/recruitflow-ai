@@ -34,7 +34,10 @@ async def _get_db() -> AsyncSession:  # noqa: ANN201
 # Tool 1: search_documents
 # ---------------------------------------------------------------------------
 
-async def search_documents_fn(query: str, client_id: str, doc_type: str | None = None, limit: int = 10) -> str:
+
+async def search_documents_fn(
+    query: str, client_id: str, doc_type: str | None = None, limit: int = 10
+) -> str:
     """Search across all ingested documents using hybrid retrieval (keyword + semantic).
 
     Args:
@@ -55,14 +58,15 @@ search_documents_tool = FunctionTool.from_defaults(
     async_fn=search_documents_fn,
     name="search_documents",
     description="Search across all ingested documents using hybrid keyword and semantic retrieval. "
-                "Returns ranked results with document IDs, titles, and relevance scores. "
-                "Always requires a client_id for tenant isolation.",
+    "Returns ranked results with document IDs, titles, and relevance scores. "
+    "Always requires a client_id for tenant isolation.",
 )
 
 
 # ---------------------------------------------------------------------------
 # Tool 2: get_document_by_id
 # ---------------------------------------------------------------------------
+
 
 async def get_document_by_id_fn(doc_id: str) -> str:
     """Fetch a single document's full details by its ID.
@@ -80,15 +84,18 @@ async def get_document_by_id_fn(doc_id: str) -> str:
         doc = result.scalar_one_or_none()
         if doc is None:
             return json.dumps({"error": f"Document {doc_id} not found"})
-        return json.dumps({
-            "id": str(doc.id),
-            "title": doc.title,
-            "doc_type": doc.doc_type,
-            "file_name": doc.file_name,
-            "extracted_text": (doc.extracted_text or "")[:5000],
-            "auto_tags": doc.auto_tags,
-            "created_at": str(doc.created_at),
-        }, default=str)
+        return json.dumps(
+            {
+                "id": str(doc.id),
+                "title": doc.title,
+                "doc_type": doc.doc_type,
+                "file_name": doc.file_name,
+                "extracted_text": (doc.extracted_text or "")[:5000],
+                "auto_tags": doc.auto_tags,
+                "created_at": str(doc.created_at),
+            },
+            default=str,
+        )
 
 
 get_document_by_id_tool = FunctionTool.from_defaults(
@@ -102,7 +109,10 @@ get_document_by_id_tool = FunctionTool.from_defaults(
 # Tool 3: generate_document (streaming via DeepSeek)
 # ---------------------------------------------------------------------------
 
-async def generate_document_fn(doc_type: str, context: str, reference_ids: list[str] | None = None) -> str:
+
+async def generate_document_fn(
+    doc_type: str, context: str, reference_ids: list[str] | None = None
+) -> str:
     """Generate a new document using DeepSeek V4-Flash with RAG context.
 
     Args:
@@ -120,7 +130,9 @@ async def generate_document_fn(doc_type: str, context: str, reference_ids: list[
         async with async_session_factory() as db:
             for ref_id in reference_ids:
                 result = await db.execute(
-                    select(Document).where(Document.id == ref_id, Document.deleted_at.is_(None))
+                    select(Document).where(
+                        Document.id == ref_id, Document.deleted_at.is_(None)
+                    )
                 )
                 ref_doc = result.scalar_one_or_none()
                 if ref_doc and ref_doc.extracted_text:
@@ -131,7 +143,11 @@ async def generate_document_fn(doc_type: str, context: str, reference_ids: list[
         f"based on the context provided. Use the reference documents for style and content inspiration."
     )
 
-    user_prompt = f"Context: {context}\n\nReference material:\n{reference_text}" if reference_text else f"Context: {context}"
+    user_prompt = (
+        f"Context: {context}\n\nReference material:\n{reference_text}"
+        if reference_text
+        else f"Context: {context}"
+    )
     user_prompt += "\n\nGenerate the complete document with proper formatting."
 
     response = await litellm.acompletion(
@@ -151,13 +167,14 @@ generate_document_tool = FunctionTool.from_defaults(
     async_fn=generate_document_fn,
     name="generate_document",
     description="Generate a new document (resume, JD, offer letter, SOP, etc.) using AI with optional reference documents. "
-                "Provide doc_type, context description, and optional reference document IDs.",
+    "Provide doc_type, context description, and optional reference document IDs.",
 )
 
 
 # ---------------------------------------------------------------------------
 # Tool 4: score_resume
 # ---------------------------------------------------------------------------
+
 
 async def score_resume_fn(resume_id: str, jd_id: str) -> str:
     """Score a resume document against a job description document.
@@ -173,7 +190,9 @@ async def score_resume_fn(resume_id: str, jd_id: str) -> str:
 
     async with async_session_factory() as db:
         resume_result = await db.execute(
-            select(Document).where(Document.id == resume_id, Document.deleted_at.is_(None))
+            select(Document).where(
+                Document.id == resume_id, Document.deleted_at.is_(None)
+            )
         )
         jd_result = await db.execute(
             select(Document).where(Document.id == jd_id, Document.deleted_at.is_(None))
@@ -195,7 +214,10 @@ async def score_resume_fn(resume_id: str, jd_id: str) -> str:
     response = await litellm.acompletion(
         model="deepseek/deepseek-v4-flash",
         messages=[
-            {"role": "system", "content": "You are an AI resume scorer. Return only valid JSON."},
+            {
+                "role": "system",
+                "content": "You are an AI resume scorer. Return only valid JSON.",
+            },
             {"role": "user", "content": prompt},
         ],
         temperature=0.1,
@@ -209,13 +231,14 @@ score_resume_tool = FunctionTool.from_defaults(
     async_fn=score_resume_fn,
     name="score_resume",
     description="Score a resume (by document ID) against a job description (by document ID). "
-                "Returns skills match, experience relevance, education match, and recommendation.",
+    "Returns skills match, experience relevance, education match, and recommendation.",
 )
 
 
 # ---------------------------------------------------------------------------
 # Tool 5: list_candidates
 # ---------------------------------------------------------------------------
+
 
 async def list_candidates_fn(
     client_id: str,
@@ -249,17 +272,21 @@ async def list_candidates_fn(
 
     query = " ".join(query_parts) if query_parts else "candidate resume"
 
-    results = semantic_search(query=query, client_id=client_id, doc_type="resume", limit=limit)
+    results = semantic_search(
+        query=query, client_id=client_id, doc_type="resume", limit=limit
+    )
 
     candidates = []
     for r in results:
         payload = r.get("payload", {})
-        candidates.append({
-            "doc_id": r["id"],
-            "candidate_name": payload.get("candidate_name"),
-            "skills": payload.get("skills", []),
-            "score": r["score"],
-        })
+        candidates.append(
+            {
+                "doc_id": r["id"],
+                "candidate_name": payload.get("candidate_name"),
+                "skills": payload.get("skills", []),
+                "score": r["score"],
+            }
+        )
 
     return json.dumps({"total": len(candidates), "candidates": candidates}, default=str)
 
@@ -268,7 +295,7 @@ list_candidates_tool = FunctionTool.from_defaults(
     async_fn=list_candidates_fn,
     name="list_candidates",
     description="List candidates matching filters like skills, experience, and location. "
-                "Uses semantic search over resume documents. Always requires a client_id.",
+    "Uses semantic search over resume documents. Always requires a client_id.",
 )
 
 
