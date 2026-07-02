@@ -40,7 +40,9 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 async def extract_document_text(document_id: uuid.UUID, db: AsyncSession) -> str | None:
     """Download a document's file, extract text, update DB, and return the text."""
     result = await db.execute(
-        select(Document).where(Document.id == document_id, Document.deleted_at.is_(None))
+        select(Document).where(
+            Document.id == document_id, Document.deleted_at.is_(None)
+        )
     )
     document = result.scalar_one_or_none()
     if document is None:

@@ -125,8 +125,12 @@ async def get_collections_status() -> dict[str, dict]:
             status[collection_name] = {
                 "exists": True,
                 "status": info.status.name if info.status else "unknown",
-                "vectors_count": info.vectors_count if hasattr(info, "vectors_count") else 0,
-                "points_count": info.points_count if hasattr(info, "points_count") else 0,
+                "vectors_count": (
+                    info.vectors_count if hasattr(info, "vectors_count") else 0
+                ),
+                "points_count": (
+                    info.points_count if hasattr(info, "points_count") else 0
+                ),
             }
         except (UnexpectedResponse, ValueError):
             status[collection_name] = {
