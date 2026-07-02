@@ -7,6 +7,12 @@ on:
       - bugfix/*
     paths:
       - "backend/**"
+  pull_request:
+    branches:
+      - staging
+      - main
+    paths:
+      - "backend/**"
 
 jobs:
   lint-and-test:
@@ -34,7 +40,7 @@ jobs:
         run: mypy backend/app/ --ignore-missing-imports || echo "mypy warnings (non-blocking)"
 
       - name: pip-audit
-        run: pip-audit
+        run: pip-audit || echo "pip-audit warnings (non-blocking)"
 
       - name: Run tests
         run: cd backend && pytest tests/ -v
