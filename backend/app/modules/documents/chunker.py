@@ -65,10 +65,10 @@ def _find_section_boundaries(text: str, section_keywords: list[str]) -> list[tup
     # Map each section to its text range
     boundaries: list[tuple[int, int, str]] = []
     for idx, (line_num, header) in enumerate(sections):
-        start_char = sum(len(l) + 1 for l in lines[:line_num])
+        start_char = sum(len(line) + 1 for line in lines[:line_num])
         if idx + 1 < len(sections):
             end_line = sections[idx + 1][0]
-            end_char = sum(len(l) + 1 for l in lines[:end_line])
+            end_char = sum(len(line) + 1 for line in lines[:end_line])
         else:
             end_char = len(text)
         boundaries.append((start_char, end_char, header))
