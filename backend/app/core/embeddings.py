@@ -48,7 +48,9 @@ def _get_qdrant_collection_name(doc_type: str) -> str:
         return "hr_documents"
 
 
-def _build_payload(chunk: dict, doc_type: str, client_id: str, auto_tags: dict | None) -> dict:
+def _build_payload(
+    chunk: dict, doc_type: str, client_id: str, auto_tags: dict | None
+) -> dict:
     """Build Qdrant payload from chunk data."""
     payload: dict[str, Any] = {
         "doc_id": str(chunk["document_id"]),
@@ -91,11 +93,13 @@ async def embed_and_store_chunks(
 
     for chunk, vector in zip(chunks, vectors):
         point_id = uuid.uuid4()
-        points.append({
-            "id": str(point_id),
-            "vector": vector,
-            "payload": _build_payload(chunk, doc_type, client_id, auto_tags),
-        })
+        points.append(
+            {
+                "id": str(point_id),
+                "vector": vector,
+                "payload": _build_payload(chunk, doc_type, client_id, auto_tags),
+            }
+        )
         point_ids.append(point_id)
 
     client.upsert(collection_name=collection, points=points)

@@ -49,19 +49,24 @@ async def test_auto_tag_with_mocked_llm():
     mock_response.choices = [
         AsyncMock(
             message=AsyncMock(
-                content=json.dumps({
-                    "document_type": "resume",
-                    "candidate_name": "Jane Smith",
-                    "role": "Data Scientist",
-                    "company": "TechCorp",
-                    "skills": ["Python", "ML", "SQL"],
-                    "date": "2026-03-10",
-                })
+                content=json.dumps(
+                    {
+                        "document_type": "resume",
+                        "candidate_name": "Jane Smith",
+                        "role": "Data Scientist",
+                        "company": "TechCorp",
+                        "skills": ["Python", "ML", "SQL"],
+                        "date": "2026-03-10",
+                    }
+                )
             )
         )
     ]
 
-    with patch("app.modules.documents.auto_tagger.litellm.acompletion", return_value=mock_response):
+    with patch(
+        "app.modules.documents.auto_tagger.litellm.acompletion",
+        return_value=mock_response,
+    ):
         result = await auto_tag_document_text("Sample resume text here")
         assert result["document_type"] == "resume"
         assert result["candidate_name"] == "Jane Smith"
