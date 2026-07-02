@@ -1,1 +1,1 @@
-# CI trigger - RF-27
+# ci-fix: mypy non-blocking
