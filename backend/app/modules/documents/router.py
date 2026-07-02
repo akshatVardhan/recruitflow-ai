@@ -4,8 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.modules.documents.schemas import DocType, DocumentDetailResponse, DocumentStatusResponse, DocumentUploadResponse
-from app.modules.documents.service import create_document, get_document, get_document_status
+from app.modules.documents.schemas import (
+    DocType,
+    DocumentDetailResponse,
+    DocumentStatusResponse,
+    DocumentUploadResponse,
+)
+from app.modules.documents.service import (
+    create_document,
+    get_document,
+    get_document_status,
+)
 
 router = APIRouter()
 

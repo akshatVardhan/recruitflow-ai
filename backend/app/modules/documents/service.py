@@ -25,7 +25,9 @@ async def create_document(
     file_size_kb = len(file_bytes) // 1024
 
     doc_id = uuid.uuid4()
-    file_ext = file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "bin"
+    file_ext = (
+        file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "bin"
+    )
     file_path = f"documents/{client_id}/{doc_id}.{file_ext}"
 
     # Upload blob to storage first
@@ -54,17 +56,25 @@ async def create_document(
         await db.refresh(document)
         return document
     except Exception as e:
-        logger.error(f"DB commit failed after blob upload, cleaning up {file_path}: {e}")
+        logger.error(
+            f"DB commit failed after blob upload, cleaning up {file_path}: {e}"
+        )
         await delete_file(bucket=settings.doc_upload_bucket, key=file_path)
         raise
 
 
 async def get_document(db: AsyncSession, document_id: uuid.UUID) -> Optional[Document]:
-    result = await db.execute(select(Document).where(Document.id == document_id, Document.deleted_at.is_(None)))
+    result = await db.execute(
+        select(Document).where(
+            Document.id == document_id, Document.deleted_at.is_(None)
+        )
+    )
     return result.scalar_one_or_none()
 
 
-async def get_document_status(db: AsyncSession, document_id: uuid.UUID) -> Optional[dict]:
+async def get_document_status(
+    db: AsyncSession, document_id: uuid.UUID
+) -> Optional[dict]:
     doc = await get_document(db, document_id)
     if doc is None:
         return None
