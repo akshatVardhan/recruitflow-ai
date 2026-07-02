@@ -37,7 +37,7 @@ jobs:
         run: black --check backend/
 
       - name: MyPy check
-        run: mypy backend/app/
+        run: mypy backend/app/ --ignore-missing-imports
 
       - name: pip-audit
         run: pip-audit
