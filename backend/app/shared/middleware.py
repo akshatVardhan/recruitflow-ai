@@ -13,7 +13,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         start = time.time()
         response = await call_next(request)
         duration = time.time() - start
-        logger.info(f"{request.method} {request.url.path} - {response.status_code} - {duration:.3f}s")
+        logger.info(
+            f"{request.method} {request.url.path} - {response.status_code} - {duration:.3f}s"
+        )
         return response
 
 
@@ -25,5 +27,8 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             logger.exception(f"Unhandled error: {e}")
             return JSONResponse(
                 status_code=500,
-                content={"error": "internal_server_error", "detail": "An unexpected error occurred."},
+                content={
+                    "error": "internal_server_error",
+                    "detail": "An unexpected error occurred.",
+                },
             )
