@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.modules.documents.auto_tagger import tag_document
 from app.modules.documents.extractor import extract_document_text
 from app.modules.documents.schemas import DocumentDetailResponse, DocumentStatusResponse, DocumentUploadResponse
 from app.modules.documents.service import create_document, get_document, get_document_status
@@ -68,6 +69,21 @@ async def extract_document(
         "char_count": len(text),
         "preview": text[:500] + ("..." if len(text) > 500 else ""),
     }
+
+
+@router.post("/{document_id}/tag")
+async def tag_existing_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger auto-tagging via DeepSeek for an extracted document."""
+    tags = await tag_document(document_id, db)
+    if tags is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found or has no extracted text",
+        )
+    return {"id": str(document_id), "tags": tags}
 
 
 @router.get("/{document_id}/status", response_model=DocumentStatusResponse)
