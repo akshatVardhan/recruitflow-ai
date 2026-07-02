@@ -1,7 +1,5 @@
 """Chunking strategies for different document types."""
 
-import math
-import re
 import uuid
 from typing import Any
 
