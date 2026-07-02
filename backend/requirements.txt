@@ -22,7 +22,6 @@ qdrant-client==1.9.1
 sentence-transformers==3.0.1
 litellm==1.90.2
 llama-index==0.11.0
-llama-index-tools-agentql==0.1.0
 ruff==0.6.4
 black==24.8.0
 mypy==1.11.2
