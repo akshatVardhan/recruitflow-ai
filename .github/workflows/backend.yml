@@ -25,16 +25,16 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Ruff check
-        run: ruff check .
+        run: ruff check backend/
 
       - name: Black check
-        run: black --check .
+        run: black --check backend/
 
       - name: MyPy check
-        run: mypy app/
+        run: mypy backend/app/
 
       - name: pip-audit
         run: pip-audit
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: cd backend && pytest tests/ -v
