@@ -1,1 +1,1 @@
-# CI trigger - RF-24
+# ci-fix: mypy non-blocking
