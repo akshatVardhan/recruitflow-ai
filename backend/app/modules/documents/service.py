@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.storage import delete_file, upload_file, download_file
+from app.core.storage import delete_file, upload_file
 from app.modules.documents.models import Document
 
 logger = logging.getLogger(__name__)
