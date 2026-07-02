@@ -60,9 +60,9 @@ def _find_section_boundaries(text: str, section_keywords: list[str]) -> list[tup
         if stripped in section_keywords:
             sections.append((i, line.strip()))
 
-    # If no sections found, treat entire text as one section
+    # If no sections found, let caller fall back to paragraph chunking
     if not sections:
-        return [(0, len(text), "full_text")]
+        return []
 
     # Map each section to its text range
     boundaries: list[tuple[int, int, str]] = []
