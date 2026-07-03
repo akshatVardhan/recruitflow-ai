@@ -19,6 +19,28 @@ from app.modules.documents.service import (
 router = APIRouter()
 
 
+@router.post("/{document_id}/chunk")
+async def chunk_existing_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Chunk an extracted document based on its type."""
+    doc = await get_document(db, document_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if not doc.extracted_text:
+        raise HTTPException(
+            status_code=400, detail="Document has no extracted text; run extract first"
+        )
+
+    chunks = chunk_document(doc)
+    return {
+        "id": str(document_id),
+        "chunk_count": len(chunks),
+        "chunks": chunks,
+    }
+
+
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=201)
 async def upload_document(
     client_id: uuid.UUID = Form(...),
