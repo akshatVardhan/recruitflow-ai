@@ -1,5 +1,4 @@
-# Deprecated - .opencode/ was removed in the Claude Code migration
-# .agents/ is now tracked in the repo for agent definitions
+# .opencode/ is tracked (MCP config + agent discovery for OpenCode runtime)
 # .claude/ is Claude Code-specific and not compatible with current tooling
 .claude/
 
