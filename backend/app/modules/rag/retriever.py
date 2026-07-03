@@ -36,7 +36,9 @@ async def keyword_search(
         ORDER BY rank DESC
         LIMIT :limit
     """)
-    result = await db.execute(sql, {"query": query, "client_id": client_id, "limit": limit})
+    result = await db.execute(
+        sql, {"query": query, "client_id": client_id, "limit": limit}
+    )
     rows = result.all()
     return [
         {
@@ -74,7 +76,9 @@ def semantic_search(
 
     all_results: list[dict] = []
     for collection in collections:
-        must_filters: list = [FieldCondition(key="client_id", match=MatchValue(value=client_id))]
+        must_filters: list = [
+            FieldCondition(key="client_id", match=MatchValue(value=client_id))
+        ]
 
         search_result = client.search(
             collection_name=collection,
@@ -86,13 +90,15 @@ def semantic_search(
 
         for scored_point in search_result:
             payload = scored_point.payload or {}
-            all_results.append({
-                "id": payload.get("doc_id", ""),
-                "chunk_index": payload.get("chunk_index"),
-                "score": float(scored_point.score),
-                "source": f"semantic:{collection}",
-                "payload": {k: v for k, v in payload.items() if k != "client_id"},
-            })
+            all_results.append(
+                {
+                    "id": payload.get("doc_id", ""),
+                    "chunk_index": payload.get("chunk_index"),
+                    "score": float(scored_point.score),
+                    "source": f"semantic:{collection}",
+                    "payload": {k: v for k, v in payload.items() if k != "client_id"},
+                }
+            )
 
     # Sort by score descending and limit
     all_results.sort(key=lambda x: x["score"], reverse=True)

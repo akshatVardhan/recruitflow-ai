@@ -1,6 +1,5 @@
 """Tests for embedding pipeline."""
 
-
 from app.core.embeddings import _get_qdrant_collection_name, _build_payload
 
 
@@ -18,7 +17,9 @@ def test_collection_mapping_other():
 
 def test_build_payload_resume():
     chunk = {"document_id": "abc-123", "chunk_index": 0}
-    payload = _build_payload(chunk, "resume", "client-1", {"candidate_name": "John", "skills": ["Python"]})
+    payload = _build_payload(
+        chunk, "resume", "client-1", {"candidate_name": "John", "skills": ["Python"]}
+    )
     assert payload["doc_id"] == "abc-123"
     assert payload["client_id"] == "client-1"
     assert payload["candidate_name"] == "John"

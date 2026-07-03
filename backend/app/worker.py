@@ -28,7 +28,9 @@ celery_app.conf.update(
 )
 
 
-@celery_app.task(bind=True, name="ingest_document", max_retries=3, default_retry_delay=60)
+@celery_app.task(
+    bind=True, name="ingest_document", max_retries=3, default_retry_delay=60
+)
 def ingest_document(self, document_id: str):
     """Celery task: run full ingestion pipeline for a document.
 
@@ -55,7 +57,9 @@ async def _run_ingestion_pipeline(document_id: str):
 
     async with async_session_factory() as db:
         result = await db.execute(
-            select(Document).where(Document.id == document_id, Document.deleted_at.is_(None))
+            select(Document).where(
+                Document.id == document_id, Document.deleted_at.is_(None)
+            )
         )
         doc = result.scalar_one_or_none()
         if doc is None:

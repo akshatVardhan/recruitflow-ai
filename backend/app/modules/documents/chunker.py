@@ -45,7 +45,9 @@ JD_SECTIONS = [
 ]
 
 
-def _find_section_boundaries(text: str, section_keywords: list[str]) -> list[tuple[int, int, str]]:
+def _find_section_boundaries(
+    text: str, section_keywords: list[str]
+) -> list[tuple[int, int, str]]:
     """Find section boundaries in text based on keyword headers.
     Returns list of (start_pos, end_pos, section_name).
     """
@@ -83,12 +85,14 @@ def chunk_resume(text: str, doc_id: uuid.UUID) -> list[dict[str, Any]]:
     for idx, (start, end, section_name) in enumerate(boundaries):
         section_text = text[start:end].strip()
         if section_text:
-            chunks.append({
-                "chunk_index": idx,
-                "chunk_text": section_text,
-                "document_id": doc_id,
-                "section": section_name,
-            })
+            chunks.append(
+                {
+                    "chunk_index": idx,
+                    "chunk_text": section_text,
+                    "document_id": doc_id,
+                    "section": section_name,
+                }
+            )
     return chunks if chunks else _chunk_by_paragraphs(text, doc_id)
 
 
@@ -99,12 +103,14 @@ def chunk_job_description(text: str, doc_id: uuid.UUID) -> list[dict[str, Any]]:
     for idx, (start, end, section_name) in enumerate(boundaries):
         section_text = text[start:end].strip()
         if section_text:
-            chunks.append({
-                "chunk_index": idx,
-                "chunk_text": section_text,
-                "document_id": doc_id,
-                "section": section_name,
-            })
+            chunks.append(
+                {
+                    "chunk_index": idx,
+                    "chunk_text": section_text,
+                    "document_id": doc_id,
+                    "section": section_name,
+                }
+            )
     return chunks if chunks else _chunk_by_paragraphs(text, doc_id)
 
 
@@ -131,15 +137,21 @@ def _chunk_by_paragraphs(text: str, doc_id: uuid.UUID) -> list[dict[str, Any]]:
 
         # If adding this para exceeds the limit, save current chunk and start new
         if current_text and current_len + para_len + 2 > PARAGRAPH_CHUNK_CHARS:
-            chunks.append({
-                "chunk_index": chunk_idx,
-                "chunk_text": current_text.strip(),
-                "document_id": doc_id,
-            })
+            chunks.append(
+                {
+                    "chunk_index": chunk_idx,
+                    "chunk_text": current_text.strip(),
+                    "document_id": doc_id,
+                }
+            )
             chunk_idx += 1
 
             # Overlap: keep last portion of current_text as overlap
-            overlap_text = current_text[-PARAGRAPH_OVERLAP_CHARS:] if len(current_text) > PARAGRAPH_OVERLAP_CHARS else current_text
+            overlap_text = (
+                current_text[-PARAGRAPH_OVERLAP_CHARS:]
+                if len(current_text) > PARAGRAPH_OVERLAP_CHARS
+                else current_text
+            )
             current_text = overlap_text + "\n\n" + para if overlap_text else para
             current_len = len(current_text)
         else:
@@ -148,11 +160,13 @@ def _chunk_by_paragraphs(text: str, doc_id: uuid.UUID) -> list[dict[str, Any]]:
 
     # Last chunk
     if current_text.strip():
-        chunks.append({
-            "chunk_index": chunk_idx,
-            "chunk_text": current_text.strip(),
-            "document_id": doc_id,
-        })
+        chunks.append(
+            {
+                "chunk_index": chunk_idx,
+                "chunk_text": current_text.strip(),
+                "document_id": doc_id,
+            }
+        )
 
     return chunks
 
