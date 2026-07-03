@@ -1,5 +1,7 @@
 # Deprecated - .opencode/ was removed in the Claude Code migration
-# .agents/ is now tracked in the repo for Claude Code agent definitions
+# .agents/ is now tracked in the repo for agent definitions
+# .claude/ is Claude Code-specific and not compatible with current tooling
+.claude/
 
 # Environment variables - never commit
 .env

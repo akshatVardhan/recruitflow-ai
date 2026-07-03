@@ -412,14 +412,6 @@ recruitflow-ai/
         progress.md
         prompts.md
         agent-run-log.md
-    .claude/
-        agents/
-            backend-dev.md
-            frontend-dev.md
-            quality-analyst.md
-            devops-eng.md
-            cybersecurity-eng.md
-            architect.md
     docs/
         ADR.md
         COMPONENTS.md
