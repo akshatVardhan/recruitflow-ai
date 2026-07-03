@@ -1,6 +1,5 @@
 """Tests for embedding pipeline."""
 
-
 from app.core.embeddings import _get_qdrant_collection_name, _build_payload
 
 
