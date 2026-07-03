@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.modules.documents.auto_tagger import tag_document
+from app.modules.documents.chunker import chunk_document
+from app.modules.documents.extractor import extract_document_text
 from app.modules.documents.schemas import (
     DocType,
     DocumentDetailResponse,
@@ -15,6 +18,7 @@ from app.modules.documents.service import (
     get_document,
     get_document_status,
 )
+from app.worker import ingest_document
 
 router = APIRouter()
 
