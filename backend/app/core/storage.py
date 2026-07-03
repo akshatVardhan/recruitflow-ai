@@ -15,7 +15,7 @@ def get_storage_client():
         _s3_client = boto3.client(
             "s3",
             region_name="auto",
-            endpoint_url=f"https://storage.googleapis.com",
+            endpoint_url="https://storage.googleapis.com",
             aws_access_key_id="_",
             aws_secret_access_key=settings.gcs_credentials_json,
             config=Config(signature_version="s3v4"),

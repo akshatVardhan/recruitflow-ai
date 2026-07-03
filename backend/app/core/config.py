@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     minio_access_key: str = "minioadmin"
     minio_secret_key: str = "minioadmin"
     minio_secure: bool = False
+    doc_upload_bucket: str = "recruitflow-documents"
 
     gcs_bucket_name: str = ""
     gcs_credentials_json: str = ""
