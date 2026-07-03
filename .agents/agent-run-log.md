@@ -27,6 +27,9 @@ Exit status: Complete
 
 Commits made:
 - b390a2d - feat(doc-studio): implement document upload page with drag-and-drop RF-28
+- 07f0394 - chore(agents): update tracking files for PROMPT-020 completion RF-28
+- 5e9f0a9 - chore(agents): correct RF-28 agent-run-log JIRA status (now actioned) RF-28
+Branch pushed to origin: yes (feature/RF-28-doc-studio-upload pushed after session; visible at https://github.com/akshatVardhan/recruitflow-ai/tree/feature/RF-28-doc-studio-upload) - QA can pull from there. PR to staging NOT raised by this agent per conventions.md (QA raises the PR after passing).
 
 Files changed: 21 (17 new, 4 modified)
 New:
