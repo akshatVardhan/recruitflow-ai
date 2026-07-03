@@ -3,7 +3,7 @@
 Tools:
 - search_documents: hybrid search across all ingested documents
 - get_document_by_id: fetch a specific document by ID
-- generate_document: stream a new document via DeepSeek RAG
+- generate_document: stream a new document via Z.AI GLM RAG
 - score_resume: score a resume against a job description
 - list_candidates: list candidates matching filters
 """
@@ -104,14 +104,14 @@ get_document_by_id_tool = FunctionTool.from_defaults(
 
 
 # ---------------------------------------------------------------------------
-# Tool 3: generate_document (streaming via DeepSeek)
+# Tool 3: generate_document (streaming via Z.AI GLM)
 # ---------------------------------------------------------------------------
 
 
 async def generate_document_fn(
     doc_type: str, context: str, reference_ids: list[str] | None = None
 ) -> str:
-    """Generate a new document using DeepSeek V4-Flash with RAG context.
+    """Generate a new document using Z.AI GLM 5.2 with RAG context.
 
     Args:
         doc_type: The type of document to generate (resume, job_description, offer_letter, sop, etc.)
@@ -149,7 +149,7 @@ async def generate_document_fn(
     user_prompt += "\n\nGenerate the complete document with proper formatting."
 
     response = await litellm.acompletion(
-        model="deepseek/deepseek-v4-flash",
+        model="zai/glm-5.2",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -210,7 +210,7 @@ async def score_resume_fn(resume_id: str, jd_id: str) -> str:
     )
 
     response = await litellm.acompletion(
-        model="deepseek/deepseek-v4-flash",
+        model="zai/glm-5.2",
         messages=[
             {
                 "role": "system",

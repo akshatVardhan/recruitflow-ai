@@ -94,6 +94,25 @@ Never import the DeepSeek SDK directly.
 
 ---
 
+## ADR-006 - Z.AI GLM 5.2 over DeepSeek V4-Flash
+Date: 2026-07-04
+Status: Accepted
+Agent: Frontend Dev (recorded by FD; decision owner: Backend Dev / DevOps Eng)
+
+Decision:
+Replace DeepSeek V4-Flash with Z.AI GLM 5.2 as the LLM provider for all AI features (auto-tagging, document generation, resume scoring).
+
+Reasoning:
+Z.AI GLM 5.2 offers 1M-token context window, superior reasoning capabilities for long-horizon tasks, and competitive pricing. The switch is made possible by LiteLLM abstraction -- no code changes beyond updating the model string and API key configuration.
+
+Consequences:
+Model string changed from "deepseek/deepseek-v4-flash" to "zai/glm-5.2".
+API key env var changed from DEEPSEEK_API_KEY to ZAI_API_KEY.
+All existing DeepSeek-specific configuration fields retained in config.py for backward compatibility during transition.
+All LLM interactions continue to go through LiteLLM -- no provider SDK imported directly.
+
+---
+
 ## ADR-005 - MinIO for Local Storage, GCS for Production
 Date: 2026-06-30
 Status: Accepted

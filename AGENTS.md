@@ -51,6 +51,26 @@ conversation history or assumptions from previous sessions.
 
 ---
 
+## Step 1.5 - Verify Your Identity (Mandatory)
+
+After reading all files but before outputting your confirmation block, perform this identity check:
+
+```
+Your system-assigned role (from the "Agent:" header in this file at session
+start) must match the role file you just read in Step 4. For example, if
+the system says "Agent: Backend Dev" you must have read backend-dev.md,
+not devops-eng.md or any other role file.
+
+If the role in the "Agent:" header does not match the file you read:
+  STOP. Say: "System assigned me as [X] but I read the role file for [Y].
+  I will read .agents/roles/[X].md now." Then read the correct file.
+  Do not proceed until the files match.
+```
+
+This prevents the identity confusion that occurs when an agent reads the wrong role file. Every session starts with one correct identity.
+
+---
+
 ## Step 2 - Confirm Before Acting
 
 After reading all files, output exactly this block before starting any work:

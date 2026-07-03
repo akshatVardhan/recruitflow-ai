@@ -16,6 +16,122 @@
 
 ---
 
+## Session: 20260704-FD-P019 - 2026-07-04 14:30
+Agent: Frontend Dev
+Type: Process improvement - role identity verification step -- process work, normally Architect scope
+Branch: (no branch - direct staging changes)
+
+### What was done
+- Added Step 1.5 - Verify Your Identity to AGENTS.md
+  - Mandatory check after reading role files but before confirmation block
+  - Agent must compare system-assigned role header against the role file they read
+  - If mismatch: stop, report, read correct file, do not proceed until fixed
+- Added Role Identity Verification section to .agents/conventions.md
+  - Cross-references AGENTS.md Step 1.5
+  - Explains consequence of reading wrong role file (false identity, out-of-scope work)
+
+### Why
+This session demonstrated the problem repeatedly. System assigned "Frontend Dev"
+but agent read devops-eng.md, then quality-analyst.md, then architect.md, then
+backend-dev.md, then cybersecurity-eng.md before finally reading frontend-dev.md.
+Every wrong reading would have been caught at Step 1.5 before any work started.
+
+### Files changed
+- AGENTS.md (+18 lines)
+- .agents/conventions.md (+8 lines)
+
+### JIRA stories affected
+- None (process improvement)
+
+---
+
+## Session: 20260704-FD-P018 - 2026-07-04 14:00
+Agent: Frontend Dev
+Type: Model migration (DeepSeek V4-Flash -> Z.AI GLM 5.2) -- infra/config work, normally DevOps Eng scope
+Branch: feature/RF-model-switch-zai-glm52
+
+### What was done
+- Updated model from DeepSeek V4-Flash to Z.AI GLM 5.2 across all code and configuration
+- LiteLLM model string: "deepseek/deepseek-v4-flash" -> "zai/glm-5.2"
+- API key config: DEEPSEEK_API_KEY replaced with ZAI_API_KEY
+
+### Files changed (11 files, ~25 reference points)
+**Code:**
+- backend/app/core/config.py: Added zai_api_key field
+- backend/app/modules/documents/auto_tagger.py: Model string, api_key, docstring
+- backend/app/modules/rag/tools.py: Model string in 3 places, docstrings
+- backend/tests/test_auto_tagger.py: Docstring
+
+**Config and docs:**
+- .env.example: Replaced DeepSeek LLM section with Z.AI
+- docs/ADR.md: Added ADR-006 documenting the model switch
+- README.md: Updated tech stack line
+
+**Agent files:**
+- .agents/roles/backend-dev.md: 5 DeepSeek references updated
+- .agents/knowledge/schema.md: Default model_used changed
+- .agents/prompts.md: PROMPT-014 and PROMPT-025 updated
+- .agents/progress.md: RF-22 description updated
+- .agents/conventions.md: Generic cost example updated
+
+### JIRA stories affected
+- No JIRA story (operational update - TODO: create if needed)
+
+### Verification
+- All 11 files updated and verified
+- No remaining deepseek references in .py files (0 matches)
+- No remaining deepseek references in active config/doc files (ADR-004 is historical, agent-run-log is historical)
+- LiteLLM documentation confirms "zai/glm-5.2" is the correct model string
+- Z.AI API key flows via ZAI_API_KEY env var, automatically picked up by LiteLLM for zai/ prefix models
+
+### Notion update needed
+- Environment Variables page: Replace DEEPSEEK_API_KEY entry with ZAI_API_KEY
+
+---
+
+## Session: 20260704-FD-P016 - 2026-07-04 13:15
+Agent: Frontend Dev
+Type: Tracking fix (PROMPT-008 / RF-13 status correction) -- tracking update, normally DevOps Eng scope
+Branch: (no branch - direct staging changes)
+
+### What was done
+- Validated PROMPT-008 (MCP integrations, RF-13) was actually complete via agent-run-log Session 20260628-DO-P008
+- Agent-run-log confirmed: "Exit status: Complete", "No code changes - config already in place, documentation only"
+- Updated prompts.md: PROMPT-008 status changed from "In Progress" to "Done"
+- progress.md was already correct (RF-13 listed as Completed in Phase 1, agent table already shows PROMPT-009 as latest)
+
+### JIRA stories affected
+- RF-13 (MCP integrations) -- tracking correction only
+
+### Verification
+- agent-run-log entry for Session 20260628-DO-P008 confirms completion
+- No code changes needed
+
+---
+
+## Session: 20260704-FD-P015 - 2026-07-04 13:00
+Agent: Frontend Dev
+Type: Tracking fix (Frontend Dev Phase 1 status correction) -- tracking update
+Branch: (no branch - direct staging changes)
+
+### What was done
+- Validated Frontend Dev PROMPT-006/RF-11 is actually complete via git history and file inspection
+- Found 4 commits for RF-11 on staging: scaffold (PR #7), Next.js upgrade (PR #8), prettier fix (PR #9), CI fix (PR #10)
+- Verified all scaffold files exist: app/(auth)/login, app/(dashboard)/layout with sidebar, all 6 feature placeholders, lib/api.ts, hooks/use-auth.ts, hooks/use-stream.ts, components/ui/button.tsx, tests
+- Updated prompts.md: PROMPT-006 status changed from "In Progress" to "Done"
+- Updated progress.md: Frontend Dev agent row changed from "Pending" to "Complete"; Last updated note appended
+- This unblocks Phase 3: PROMPT-020 (Doc Studio upload page) now has its dependency (PROMPT-006 Done) satisfied
+
+### JIRA stories affected
+- RF-11 (Frontend scaffold) -- tracking correction only, code already on staging
+
+### Verification
+- git log --all --grep="RF-11" shows 4 commits on staging
+- Get-ChildItem frontend/ confirms all scaffold files present
+- Changing prompts.md dependency check: PROMPT-020 depends on PROMPT-006 Done -- now satisfied
+
+---
+
 ## Session: 20260704-DO-P014 - 2026-07-04 12:00
 Agent: DevOps Eng
 Type: Tooling Migration (OpenCode -> Claude Code)

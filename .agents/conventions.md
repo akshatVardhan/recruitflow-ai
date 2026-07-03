@@ -14,6 +14,16 @@
 
 ---
 
+## Role Identity Verification
+
+Before starting any work, every agent must verify that their system-assigned role matches the role file they read.
+
+The check is defined in AGENTS.md Step 1.5 -- read it and execute it before outputting your confirmation block. If you read the wrong role file, you will operate under a false identity for the entire session, causing confusion and out-of-scope work.
+
+If a mismatch is detected, stop, read the correct role file, and only then proceed.
+
+---
+
 ## No Emojis Rule
 
 Do not use emojis anywhere in this project unless explicitly requested by the project owner.
@@ -369,7 +379,7 @@ Do not proactively re-verify checks that already passed. Do not take exploratory
 
 If you are unsure whether further action is needed after completing the literal task, STOP and note the question in your JIRA completion comment for the project owner to decide. Do not assume and act on that assumption.
 
-Minimize tool calls and API round-trips. Batch file reads and edits where possible rather than making many small sequential calls. Every unnecessary tool call or LLM completion has a real dollar cost -- both GitHub Actions minutes and DeepSeek API tokens are metered.
+Minimize tool calls and API round-trips. Batch file reads and edits where possible rather than making many small sequential calls. Every unnecessary tool call or LLM completion has a real dollar cost -- both GitHub Actions minutes and LLM API tokens are metered.
 
 A task is complete the moment its explicit acceptance criteria (from the JIRA story or prompt) are met. Do not continue "improving" past that point without being asked.
 

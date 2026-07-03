@@ -28,7 +28,7 @@ PDF parsing: PyMuPDF (fitz)
 DOCX parsing and export: python-docx
 Document export: reportlab (PDF output)
 RAG framework: LlamaIndex
-LLM: DeepSeek V4-Flash via LiteLLM
+LLM: Z.AI GLM 5.2 via LiteLLM
 Embeddings: Sentence Transformers - BAAI/bge-small-en-v1.5 (local, no API cost)
 Vector DB: Qdrant (local via Docker in dev, same in prod)
 Primary DB: PostgreSQL 15 (local via Docker in dev, Cloud SQL in prod)
@@ -73,7 +73,7 @@ All routes prefixed with /api/v1/.
 Ingestion flow (implement in this order):
 1. File upload saved to MinIO/GCS
 2. Text extraction: PyMuPDF for PDF, python-docx for DOCX
-3. Auto-tagging: LiteLLM call to DeepSeek V4-Flash
+3. Auto-tagging: LiteLLM call to Z.AI GLM 5.2
    - Extract: document_type, candidate_name, role, company, skills[], date, client_id
 4. Chunking strategy:
    - Resumes: chunk by section (Education, Experience, Skills)
@@ -102,7 +102,7 @@ RAG agent tools to implement (LlamaIndex FunctionTool):
 - list_candidates(filters: dict) -> List[Candidate]
 
 Document generation must use streaming (Server-Sent Events).
-Never return a complete document in one response. Stream tokens as they arrive from DeepSeek.
+Never return a complete document in one response. Stream tokens as they arrive from the LLM.
 
 ---
 
@@ -113,7 +113,7 @@ from fastapi.responses import StreamingResponse
 
 async def stream_generation(prompt, context):
     async for chunk in litellm.acompletion(
-        model="deepseek/deepseek-v4-flash",
+        model="zai/glm-5.2",
         messages=[...],
         stream=True
     ):
@@ -172,5 +172,5 @@ Story points: 1 for single endpoint or migration, 2 for endpoint with business l
 7. All schema changes via Alembic migrations - never ALTER TABLE manually
 8. Every RAG function and agent tool must have a pytest unit test
 9. No hardcoded base URLs - all from config
-10. LiteLLM is the only interface to DeepSeek - never call DeepSeek API directly
+10. LiteLLM is the only LLM abstraction layer - never call a model provider's SDK directly
 11. No emojis anywhere (see conventions.md)

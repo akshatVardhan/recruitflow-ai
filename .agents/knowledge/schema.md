@@ -281,7 +281,7 @@ reference_doc_ids TEXT[] -- list of document IDs used as RAG context
 prompt_context    JSONB -- the context object sent to the LLM
 output_text       TEXT -- the full generated text (populated when streaming completes)
 output_file_path  TEXT -- path in MinIO/GCS if exported
-model_used        TEXT NOT NULL DEFAULT 'deepseek-v4-flash'
+model_used        TEXT NOT NULL DEFAULT 'zai-glm-5-2'
 created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 
 Indexes:
