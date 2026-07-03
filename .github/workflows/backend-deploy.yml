@@ -1,0 +1,49 @@
+name: Deploy Backend to Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker asia-south1-docker.pkg.dev
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} ./backend
+          docker push asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy recruitflow-backend \
+            --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
+            --region=asia-south1 \
+            --project=recruitflow-ai-500719
+
+      - name: Run migrations
+        run: |
+          gcloud run jobs create migrate-${{ github.sha }} \
+            --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
+            --region=asia-south1 \
+            --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
+            --command="alembic" \
+            --args="upgrade,head" \
+            --execute-now \
+            --project=recruitflow-ai-500719
