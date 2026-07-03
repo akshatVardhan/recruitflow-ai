@@ -126,10 +126,9 @@ Architect           | (not yet run) | Ready    | (no branch)
 
 ## Staging Branch State
 
-Last merged to staging: feature/RF-15-security-baseline
-Pending staging PRs: #11 (RF-34), #12 (RF-20), #13 (RF-21), #14 (RF-22), #15 (RF-23), #16 (RF-24), #17 (RF-25), #18 (RF-26), #19 (RF-27)
+Last merged to staging: Claude Code migration (7f8e0cc) + prompts update (e014ed9)
+No pending PRs. All Phase 2 stories have been merged.
 Last security review: 2026-06-28 - CyberSecurity APPROVED on PRs #1 and #2
-Branch awaiting PR to staging: fix/ci-cost-reduction (CI cost reduction)
 
 ---
 
@@ -165,7 +164,5 @@ RF-23 | Bug | Low | Backend Dev | Fixed (section fallback to paragraph chunking)
 - Updated conventions.md with all role renames, path updates, and Architect sections
 
 ### Remaining
-- Create JIRA story for the migration
-- Update JIRA sprint name (RF-Sprint-1 outdated)
-- Add Frontend prompts (RF-28, RF-29) to prompts.md
-- Update staging branch state (Phase 2 PRs pending merge to staging)
+- Update JIRA sprint name (RF-Sprint-1 outdated - needs Planner to action)
+- Frontend prompts (RF-28, RF-29) added to prompts.md (done)
