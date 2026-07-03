@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.modules.documents.auto_tagger import tag_document
+from app.modules.documents.chunker import chunk_document
+from app.modules.documents.extractor import extract_document_text
 from app.modules.documents.schemas import (
     DocType,
     DocumentDetailResponse,
@@ -15,8 +18,31 @@ from app.modules.documents.service import (
     get_document,
     get_document_status,
 )
+from app.worker import ingest_document
 
 router = APIRouter()
+
+
+@router.post("/{document_id}/chunk")
+async def chunk_existing_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Chunk an extracted document based on its type."""
+    doc = await get_document(db, document_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if not doc.extracted_text:
+        raise HTTPException(
+            status_code=400, detail="Document has no extracted text; run extract first"
+        )
+
+    chunks = chunk_document(doc)
+    return {
+        "id": str(document_id),
+        "chunk_count": len(chunks),
+        "chunks": chunks,
+    }
 
 
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=201)
@@ -36,13 +62,16 @@ async def upload_document(
         doc_type=doc_type,
         file=file,
     )
+    # Trigger async ingestion via Celery
+    ingest_document.delay(str(document.id))
+
     return DocumentUploadResponse(
         id=document.id,
         title=document.title,
         doc_type=document.doc_type,
         file_name=document.file_name,
         file_size_kb=document.file_size_kb,
-        status="uploaded",
+        status="processing",
         created_at=document.created_at,
     )
 
@@ -56,6 +85,41 @@ async def get_document_by_id(
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return DocumentDetailResponse.model_validate(document)
+
+
+@router.post("/{document_id}/extract")
+async def extract_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger text extraction for an uploaded document."""
+    text = await extract_document_text(document_id, db)
+    if text is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found or could not be extracted",
+        )
+    return {
+        "id": str(document_id),
+        "extracted": True,
+        "char_count": len(text),
+        "preview": text[:500] + ("..." if len(text) > 500 else ""),
+    }
+
+
+@router.post("/{document_id}/tag")
+async def tag_existing_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger auto-tagging via DeepSeek for an extracted document."""
+    tags = await tag_document(document_id, db)
+    if tags is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found or has no extracted text",
+        )
+    return {"id": str(document_id), "tags": tags}
 
 
 @router.get("/{document_id}/status", response_model=DocumentStatusResponse)
