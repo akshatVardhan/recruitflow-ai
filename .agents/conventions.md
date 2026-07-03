@@ -23,7 +23,7 @@ This applies without exception to:
 - Notion pages and documentation
 - Code comments and inline documentation
 - Git commit messages and PR descriptions
-- All agent files: progress.md, code-changes.md, prompts.md, agent-run-log.md
+- All agent files: progress.md, prompts.md, agent-run-log.md
 - README files and all markdown documentation
 
 Use plain text, dashes, and standard punctuation instead.
@@ -57,14 +57,14 @@ Format: YYYYMMDD-{INITIALS}-P{PROMPT_NUMBER}
 Examples:
 - 20260630-BD-P004  (Backend Dev, Prompt 004)
 - 20260630-FD-P005  (Frontend Dev, Prompt 005)
-- 20260630-QA-P004  (QA Engineer, Prompt 004)
-- 20260630-DO-P003  (DevOps Engineer, Prompt 003)
-- 20260630-CS-P015  (CyberSecurity Engineer, Prompt 015)
+- 20260630-QA-P004  (Quality Analyst, Prompt 004)
+- 20260630-DO-P003  (DevOps Eng, Prompt 003)
+- 20260630-CS-P015  (CyberSecurity Eng, Prompt 015)
+- 20260702-AR-P0XX  (Architect, Prompt XXX)
 
 This ID must appear in:
 - agent-run-log.md entry header
 - Git commit message footer (e.g. "Session: 20260630-BD-P004")
-- code-changes.md entry header
 - JIRA comment header
 
 ---
@@ -85,7 +85,7 @@ Rules (non-negotiable):
 - Never commit directly to main or staging
 - Every feature or bugfix branch requires a PR to staging
 - Staging requires a PR to main
-- PR to staging requires: QA passed + code-changes.md updated + JIRA in "In Review"
+- PR to staging requires: QA passed + JIRA completion comment with What Changed + JIRA in "In Review"
 - PR to main requires: CyberSecurity sign-off comment on the staging PR
 
 Commit message format:
@@ -165,37 +165,10 @@ Handover to QA:
 - {how to run tests}
 - {any seed data or env vars needed}
 
-code-changes.md updated: yes
 progress.md updated: yes
 Notion updated: {yes / not required}
 
 ---
-
-## code-changes.md Entry Format
-
-Every coding agent appends one entry per completed prompt.
-
-## [CHANGE-{number}] {date}
-Agent: {Agent Name}
-Session: {session-id}
-Prompt ref: {PROMPT-XXX}
-JIRA story: {RF-XX}
-Branch: {branch name}
-
-### Files Modified
-- {file path} - {what changed, one line}
-
-### What Changed
-{2-4 sentences describing what was implemented}
-
-### Test Coverage
-- {test file} - {number of tests, status}
-
-### Handover to QA
-{What QA needs to test and how}
-
-### Notes
-{Any gotchas, decisions made, or things the next agent should know}
 
 ---
 
@@ -236,7 +209,6 @@ Files changed: {number}
 Tests passing: {X}/{Y}
 
 progress.md updated: yes/no
-code-changes.md updated: yes/no
 JIRA updated: yes/no
 Notion updated: yes/no
 
@@ -248,16 +220,15 @@ Notes: {anything the project owner should know}
 ## QA Handover Rules
 
 When a coding agent transitions a story to "In Testing", QA must:
-1. Read the JIRA story completion comment
-2. Read the corresponding code-changes.md entry
-3. Pull the feature branch (not staging)
-4. Run the unit tests listed in the handover
-5. Run the standard QA checklist (in qa_engineer_agent.md)
-6. Post a JIRA comment with results:
+1. Read the JIRA story completion comment (contains What Changed, Files Changed, Handover details)
+2. Pull the feature branch (not staging)
+3. Run the unit tests listed in the handover
+4. Run the standard QA checklist (in .agents/roles/quality-analyst.md)
+5. Post a JIRA comment with results:
    - [QA PASSED] or [QA FAILED]
    - List of test cases run and results
    - Any bugs found (create separate RF-XX bug tasks)
-7. If passed: raise PR from feature branch to staging
+6. If passed: raise PR from feature branch to staging
 
 ---
 
@@ -292,7 +263,7 @@ Notion updated: /Security Reviews/{sprint}-{feature} yes/no
 
 ---
 
-## Notion Pages (4 pages only)
+## Notion Pages (4 pages only) + docs/ADR.md
 
 All other documentation lives in the repository.
 
@@ -302,17 +273,21 @@ Page 1: /RecruitFlow AI/API Contracts/
 - Updated whenever an endpoint is added or changed
 
 Page 2: /RecruitFlow AI/Local Setup Guide
-- Maintained by: DevOps Engineer
+- Maintained by: DevOps Eng
 - Step-by-step guide to run the full stack locally
 - Updated whenever setup steps change
 
 Page 3: /RecruitFlow AI/Environment Variables
-- Maintained by: DevOps Engineer
+- Maintained by: DevOps Eng
 - Full list of all env vars, purpose, which service provides them
 - No actual values, only names and descriptions
 
 Page 4: /RecruitFlow AI/Security Reviews/
-- Maintained by: CyberSecurity Engineer
+- Maintained by: CyberSecurity Eng
+
+Architectural Decisions:
+- docs/ADR.md - Maintained by: Architect
+- One entry per significant architectural decision (new tool, provider switch, major dependency, pattern change)
 - One sub-page per sprint per reviewed feature
 - Updated after every staging review
 
@@ -331,9 +306,10 @@ MCP servers:
 Per-agent MCP access:
 - Backend Dev: JIRA (own stories), Notion (API Contracts write), GitHub (branches + commits)
 - Frontend Dev: JIRA (own stories), Notion (API Contracts read), GitHub (branches + commits)
-- QA Engineer: JIRA (read all + create bugs), GitHub (read PRs + CI)
-- DevOps Engineer: JIRA (own stories), Notion (Setup Guide + Env Vars write), GitHub (full)
-- CyberSecurity: JIRA (read all + create security tasks), Notion (Security Reviews write), GitHub (PR review)
+- Quality Analyst: JIRA (read all + create bugs), GitHub (read PRs + CI)
+- DevOps Eng: JIRA (own stories), Notion (Setup Guide + Env Vars write), GitHub (full)
+- CyberSecurity Eng: JIRA (read all + create security tasks), Notion (Security Reviews write), GitHub (PR review)
+- Architect: GitHub (read only), Notion (read API Contracts)
 
 Load only the MCP servers your role needs per session to preserve context window.
 
@@ -343,7 +319,7 @@ Load only the MCP servers your role needs per session to preserve context window
 
 This project has NO .env file, ever, under any circumstance. Do not search for one. Do not attempt to read one. Do not check if one exists. Do not create one. Do not suggest creating one.
 
-All environment variables are already present in your shell environment automatically, injected by Doppler before your session starts (via `doppler run -- opencode --agent <name>`). Access them exactly as you would any normal environment variable -- using os.getenv() in Python, process.env in Node/TypeScript, or standard shell variable syntax. They are already there. Do not verify their existence via file system checks -- if a variable is missing, the command using it will fail naturally and that failure message is your signal, not a file search.
+All environment variables are already present in your shell environment automatically, injected by Doppler before your session starts (via `doppler run --`). Access them exactly as you would any normal environment variable -- using os.getenv() in Python, process.env in Node/TypeScript, or standard shell variable syntax. They are already there. Do not verify their existence via file system checks -- if a variable is missing, the command using it will fail naturally and that failure message is your signal, not a file search.
 
 If you ever see a .env file in the project during any session, delete it immediately without asking, since its mere presence indicates prior drift from this convention and its contents should already be in Doppler.
 
@@ -367,10 +343,9 @@ Keep-warm: Not needed -- Cloud Run min-instances=1 prevents cold starts natively
 ## Tracking Files - No Exceptions
 
 Only these files exist for state tracking, ever:
-- .opencode/manual/progress.md
-- .opencode/manual/prompts.md
-- .opencode/manual/code-changes.md
-- .opencode/manual/agent-run-log.md
+- .agents/progress.md
+- .agents/prompts.md
+- .agents/agent-run-log.md
 
 No agent may create a new tracking, notes, or status file under any name, for any reason. If you believe additional tracking is needed, write a note explaining why inside progress.md and wait for the project owner to decide -- never create the file yourself.
 
@@ -388,7 +363,7 @@ A merged PR is a terminal state for that story's workflow. No agent should take 
 
 ## Scope and Efficiency Discipline
 
-Every agent must do exactly what the current prompt asks -- no more, no less. Before taking any action, check whether it has already been done by reviewing recent git log, JIRA comment history on the relevant story, and the last few entries in code-changes.md. Never repeat work that is already complete.
+Every agent must do exactly what the current prompt asks -- no more, no less. Before taking any action, check whether it has already been done by reviewing recent git log and JIRA comment history on the relevant story. Never repeat work that is already complete.
 
 Do not proactively re-verify checks that already passed. Do not take exploratory or speculative actions beyond the literal scope of the assigned prompt. Do not add extra steps, extra validation passes, or extra reviews that were not requested, even if they seem helpful -- they cost real money in API tokens and CI minutes.
 
@@ -422,28 +397,29 @@ recruitflow-ai/
         tests/
         Dockerfile
         requirements.txt
-    .opencode/
-        agents/
-            backend.md
-            devops.md
-            frontend.md
-            qa.md
-            security.md
-        manual/
-            md/
-                01_backend_dev_agent.md
-                02_frontend_dev_agent.md
-                03_qa_engineer_agent.md
-                04_devops_engineer_agent.md
-                05_cybersecurity_engineer_agent.md
-            conventions.md
-            progress.md
-            prompts.md
-            code-changes.md
-            agent-run-log.md
+    .agents/
+        knowledge/
             design-system.md
             schema.md
-        config.json
+        roles/
+            backend-dev.md
+            frontend-dev.md
+            quality-analyst.md
+            devops-eng.md
+            cybersecurity-eng.md
+            architect.md
+        conventions.md
+        progress.md
+        prompts.md
+        agent-run-log.md
+    .claude/
+        agents/
+            backend-dev.md
+            frontend-dev.md
+            quality-analyst.md
+            devops-eng.md
+            cybersecurity-eng.md
+            architect.md
     docs/
         ADR.md
         COMPONENTS.md
@@ -456,7 +432,5 @@ recruitflow-ai/
             frontend.yml
     docker-compose.yml
     .env.example
-    .opencode/
-        config.json
     AGENTS.md
     README.md

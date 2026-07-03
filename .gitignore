@@ -1,7 +1,5 @@
-# Agent orchestration - local only, never commit
-.agents/
-agents/
-.opencode/
+# Deprecated - .opencode/ was removed in the Claude Code migration
+# .agents/ is now tracked in the repo for Claude Code agent definitions
 
 # Environment variables - never commit
 .env

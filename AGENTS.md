@@ -11,36 +11,39 @@ conversation history or assumptions from previous sessions.
 
 ## Step 1 - Read These Files (in this order, every session)
 
-1. Read: .opencode/manual/conventions.md
+1. Read: .agents/conventions.md
    Defines your working rules, git conventions, JIRA workflow, story point
    scale, no-emoji rule, and session ID format.
    Non-negotiable for every agent.
 
-2. Read: .opencode/manual/progress.md
+2. Read: .agents/progress.md
    Tells you the current project phase, sprint, what is done, what is in
    progress, what is pending, and the last known state of every agent.
    This is your context reset anchor.
 
-3. Read: .opencode/manual/prompts.md
+3. Read: .agents/prompts.md
    Contains all tasks for all agents across all phases. Find prompts addressed
    to your role with status Pending and no unresolved dependencies.
    That is your work queue.
 
-4. Read your agent MD file based on your role:
+4. Read your agent role file based on your role:
 
-   Backend Dev:      .opencode/manual/md/01_backend_dev_agent.md
-                     also read: .opencode/manual/schema.md
+   Backend Dev:      .agents/roles/backend-dev.md
+                     also read: .agents/knowledge/schema.md
 
-   Frontend Dev:     .opencode/manual/md/02_frontend_dev_agent.md
-                     also read: .opencode/manual/design-system.md
+   Frontend Dev:     .agents/roles/frontend-dev.md
+                     also read: .agents/knowledge/design-system.md
 
-   QA Engineer:      .opencode/manual/md/03_qa_engineer_agent.md
+   Quality Analyst:  .agents/roles/quality-analyst.md
 
-   DevOps Engineer:  .opencode/manual/md/04_devops_engineer_agent.md
+   DevOps Eng:       .agents/roles/devops-eng.md
 
-   CyberSecurity:    .opencode/manual/md/05_cybersecurity_engineer_agent.md
+   CyberSecurity Eng: .agents/roles/cybersecurity-eng.md
 
-5. Read: .opencode/manual/code-changes.md (last 3 entries only)
+   Architect:        .agents/roles/architect.md
+                     also read: .agents/knowledge/schema.md
+
+5. Read: .agents/agent-run-log.md (last 3 entries only)
    Gives you context on what was recently built so you do not duplicate work
    or break dependencies.
 
@@ -72,9 +75,8 @@ Execute your pending prompt exactly as written in prompts.md.
 Follow all rules in conventions.md without exception.
 
 After completing the task:
-- Update .opencode/manual/progress.md (your agent row and completed item)
-- Update .opencode/manual/code-changes.md (new entry for this session)
-- Update .opencode/manual/agent-run-log.md (new session entry)
+- Update .agents/progress.md (your agent row and completed item)
+- Update .agents/agent-run-log.md (new session entry)
 - Update JIRA via MCP (transition story, add completion comment)
 
 ---

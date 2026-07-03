@@ -1,6 +1,6 @@
 # RecruitFlow AI - Architectural Decision Records
 
-# Maintained by: Backend Developer
+# Maintained by: Architect
 # Updated whenever a significant architectural decision is made.
 # Each ADR is permanent - never delete or overwrite an existing entry.
 # If a decision is reversed, add a new ADR superseding the old one.
