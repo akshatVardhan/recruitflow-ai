@@ -339,6 +339,16 @@ Load only the MCP servers your role needs per session to preserve context window
 
 ---
 
+## Environment Variables - Doppler Only
+
+This project has NO .env file, ever, under any circumstance. Do not search for one. Do not attempt to read one. Do not check if one exists. Do not create one. Do not suggest creating one.
+
+All environment variables are already present in your shell environment automatically, injected by Doppler before your session starts (via `doppler run -- opencode --agent <name>`). Access them exactly as you would any normal environment variable -- using os.getenv() in Python, process.env in Node/TypeScript, or standard shell variable syntax. They are already there. Do not verify their existence via file system checks -- if a variable is missing, the command using it will fail naturally and that failure message is your signal, not a file search.
+
+If you ever see a .env file in the project during any session, delete it immediately without asking, since its mere presence indicates prior drift from this convention and its contents should already be in Doppler.
+
+---
+
 ## CI/CD Pipelines
 
 Repository is public -- unlimited free GitHub Actions minutes.

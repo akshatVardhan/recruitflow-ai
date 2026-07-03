@@ -89,3 +89,4 @@ After completing the task:
 - If blocked: update JIRA to Blocked, note the blocking story, update progress.md, stop
 - If a prompt is unclear: add a JIRA comment asking for clarification, stop
 - If you discover something that affects another agent: note it in progress.md
+- No .env file exists or should ever exist in this project. Never search for, read, or create one. All secrets come from Doppler-injected environment variables already present in your shell session.
