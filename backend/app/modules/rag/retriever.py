@@ -23,7 +23,8 @@ async def keyword_search(
 
     Uses the idx_documents_fts GIN index on title || extracted_text.
     """
-    sql = text("""
+    sql = text(
+        """
         SELECT id, title, doc_type, file_name,
                ts_rank(to_tsvector('english', title || ' ' || coalesce(extracted_text, '')),
                        plainto_tsquery('english', :query)) AS rank,
@@ -35,7 +36,8 @@ async def keyword_search(
           AND deleted_at IS NULL
         ORDER BY rank DESC
         LIMIT :limit
-    """)
+    """
+    )
     result = await db.execute(
         sql, {"query": query, "client_id": client_id, "limit": limit}
     )
