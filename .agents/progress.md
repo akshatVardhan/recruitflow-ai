@@ -1,7 +1,7 @@
 # RecruitFlow AI - Project Progress
 
 Last updated: 2026-07-04
-Updated by: DevOps Eng
+Updated by: Frontend Dev (model migration: DeepSeek -> Z.AI GLM 5.2 -- infra/config work, normally DevOps Eng scope)
 Current phase: Migration - OpenCode to Claude Code
 Current sprint: RF-Sprint-1 (28 Jun - 5 Jul 2026)
 Overall progress: Tooling migration in progress
@@ -56,7 +56,7 @@ RF-15 - [CyberSec] Configure branch protection and security baseline
 RF-34 - [Backend] Document upload endpoint with database model and file storage (QA PASSED)
 RF-20 - [Backend] Set up Qdrant collections for RAG (QA PASSED)
 RF-21 - [Backend] Document text extraction pipeline (QA PASSED)
-RF-22 - [Backend] Auto-tagging via DeepSeek V4-Flash (QA PASSED)
+RF-22 - [Backend] Auto-tagging via Z.AI GLM 5.2 (QA PASSED)
 RF-23 - [Backend] Chunking strategy implementation (QA PASSED)
 RF-24 - [Backend] Embedding pipeline with Sentence Transformers (QA PASSED)
 RF-25 - [Backend] Celery async ingestion job (QA PASSED)
@@ -116,7 +116,7 @@ Branch: fix/ci-cost-reduction (not yet PR'd to staging)
 
 Agent              | Last Prompt | Status      | Branch
 Backend Dev         | PROMPT-019  | Complete    | feature/RF-23-chunking (latest fix)
-Frontend Dev        | PROMPT-006  | Pending     | feature/RF-11-nextjs-scaffold
+Frontend Dev        | PROMPT-006  | Complete    | feature/RF-11-nextjs-scaffold
 Quality Analyst     | PROMPT-008  | Complete    | (all 9 QA reviews done)
 DevOps Eng          | PROMPT-009  | Complete    | fix/ci-cost-reduction
 CyberSecurity Eng   | PROMPT-010  | Complete    | feature/RF-15-security-baseline (merged)
@@ -166,3 +166,20 @@ RF-23 | Bug | Low | Backend Dev | Fixed (section fallback to paragraph chunking)
 ### Remaining
 - Update JIRA sprint name (RF-Sprint-1 outdated - needs Planner to action)
 - Frontend prompts (RF-28, RF-29) added to prompts.md (done)
+
+---
+
+## Model Migration - DeepSeek V4-Flash to Z.AI GLM 5.2 (2026-07-04)
+
+Completed by Frontend Dev (Session: 20260704-FD-P018) -- infra/config work, normally DevOps Eng scope:
+
+### What Changed
+- All 4 Python source files updated: auto_tagger.py, tools.py, config.py, test_auto_tagger.py
+- .env.example: DEEPSEEK_API_KEY replaced with ZAI_API_KEY
+- docs/ADR.md: Added ADR-006 documenting the model switch
+- Agent knowledge files updated: backend-dev.md, schema.md, prompts.md, progress.md, conventions.md
+- LiteLLM model string changed from "deepseek/deepseek-v4-flash" to "zai/glm-5.2"
+- No remaining deepseek references in active code or config files
+
+### Notion update needed
+- Environment Variables page: Replace DEEPSEEK_API_KEY with ZAI_API_KEY

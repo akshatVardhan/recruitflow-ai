@@ -39,7 +39,7 @@ class AutoTags(BaseModel):
 
 
 async def auto_tag_document_text(extracted_text: str) -> dict:
-    """Call DeepSeek V4-Flash via LiteLLM to extract structured metadata."""
+    """Call Z.AI GLM 5.2 via LiteLLM to extract structured metadata."""
     if not extracted_text or not extracted_text.strip():
         logger.warning("Empty text provided for auto-tagging")
         return AutoTags().model_dump()
@@ -48,7 +48,7 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
 
     try:
         response = await litellm.acompletion(
-            model="deepseek/deepseek-v4-flash",
+            model="zai/glm-5.2",
             messages=[
                 {
                     "role": "system",
@@ -58,7 +58,7 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
             ],
             temperature=0.1,
             max_tokens=512,
-            api_key=settings.litellm_api_key or settings.deepseek_api_key or None,
+            api_key=settings.zai_api_key or None,
         )
 
         raw = response.choices[0].message.content.strip()

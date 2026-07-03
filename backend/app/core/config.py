@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     sentry_dsn_backend: str = ""
 
     litellm_api_key: str = ""
-    deepseek_api_key: str = ""
+    zai_api_key: str = ""
     proxycurl_api_key: str = ""
 
     next_public_api_base_url: str = "http://localhost:3000"
