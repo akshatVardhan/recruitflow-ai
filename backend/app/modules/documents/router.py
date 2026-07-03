@@ -58,6 +58,26 @@ async def get_document_by_id(
     return DocumentDetailResponse.model_validate(document)
 
 
+@router.post("/{document_id}/extract")
+async def extract_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger text extraction for an uploaded document."""
+    text = await extract_document_text(document_id, db)
+    if text is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found or could not be extracted",
+        )
+    return {
+        "id": str(document_id),
+        "extracted": True,
+        "char_count": len(text),
+        "preview": text[:500] + ("..." if len(text) > 500 else ""),
+    }
+
+
 @router.get("/{document_id}/status", response_model=DocumentStatusResponse)
 async def get_upload_status(
     document_id: uuid.UUID,

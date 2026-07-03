@@ -5,8 +5,8 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
     CollectionStatus,
     Distance,
-    VectorParams,
     PayloadSchemaType,
+    VectorParams,
 )
 
 from app.core.config import settings
