@@ -1,9 +1,10 @@
 # RecruitFlow AI - Component Registry
 
-# Maintained by: Frontend Developer
+# Maintained by: Frontend Dev
 # Updated whenever a new reusable component is created or an existing one changes.
 # Purpose: prevents duplicate components being built across features.
 # Before building any new component, check if one already exists here.
+# For architectural patterns and decisions (not individual component reference), see docs/ADR.md instead.
 
 ---
 
