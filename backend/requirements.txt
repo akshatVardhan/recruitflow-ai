@@ -20,7 +20,6 @@ PyMuPDF==1.24.2
 python-docx==1.1.2
 qdrant-client==1.9.1
 sentence-transformers==3.0.1
-litellm==1.90.2
 llama-index==0.11.0
 ruff==0.6.4
 black==24.8.0
