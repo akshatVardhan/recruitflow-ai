@@ -78,6 +78,21 @@ async def extract_document(
     }
 
 
+@router.post("/{document_id}/tag")
+async def tag_existing_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger auto-tagging via DeepSeek for an extracted document."""
+    tags = await tag_document(document_id, db)
+    if tags is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found or has no extracted text",
+        )
+    return {"id": str(document_id), "tags": tags}
+
+
 @router.get("/{document_id}/status", response_model=DocumentStatusResponse)
 async def get_upload_status(
     document_id: uuid.UUID,
