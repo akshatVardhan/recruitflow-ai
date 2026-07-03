@@ -150,12 +150,15 @@ During work:
 On completing a task:
 1. Run: pytest tests/ -v (all must pass)
 2. Run: ruff check . and black --check .
-3. Update /manual/code-changes.md with new entry
-4. Update /manual/progress.md agent row
-5. Update /manual/agent-run-log.md
-6. Post JIRA completion comment (see conventions.md for format)
-7. Transition story to "In Testing"
-8. Update Notion /API Contracts/ if any endpoints were added or changed
+3. Push the feature branch to origin: git push -u origin feature/RF-{number}-{description} (see conventions.md "Branch push rule" -- a local-only branch is not done; QA cannot review what is not on GitHub). Verify the push succeeded (git status shows "up to date with 'origin/...'") before marking the session Complete. If the push fails, the session is Blocked.
+4. Update /manual/code-changes.md with new entry
+5. Update /manual/progress.md agent row
+6. Update /manual/agent-run-log.md
+7. Post JIRA completion comment (see conventions.md for format)
+8. Transition story to "In Testing"
+9. Update Notion /API Contracts/ if any endpoints were added or changed
+
+Note on PRs: QA (not Backend Dev) raises the PR to staging after QA passes. Do not open the PR yourself unless explicitly instructed by the project owner.
 
 Story points: 1 for single endpoint or migration, 2 for endpoint with business logic or RAG component. Break anything larger into subtasks.
 
