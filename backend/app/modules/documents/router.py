@@ -58,13 +58,16 @@ async def upload_document(
         doc_type=doc_type,
         file=file,
     )
+    # Trigger async ingestion via Celery
+    ingest_document.delay(str(document.id))
+
     return DocumentUploadResponse(
         id=document.id,
         title=document.title,
         doc_type=document.doc_type,
         file_name=document.file_name,
         file_size_kb=document.file_size_kb,
-        status="uploaded",
+        status="processing",
         created_at=document.created_at,
     )
 
