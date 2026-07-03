@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/toaster"
 import { FileText, Users, Briefcase, Search, MessageSquare, Menu, X, Building2 } from "lucide-react"
 
 const navItems = [
@@ -71,6 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
         <main className="flex-1 overflow-auto p-4">{children}</main>
       </div>
+      <Toaster />
     </div>
   )
 }
