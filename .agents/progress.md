@@ -1,10 +1,10 @@
 # RecruitFlow AI - Project Progress
 
 Last updated: 2026-07-04
-Updated by: Frontend Dev (model migration: DeepSeek -> Z.AI GLM 5.2 -- infra/config work, normally DevOps Eng scope)
-Current phase: Migration - OpenCode to Claude Code
+Updated by: Frontend Dev (PROMPT-020 / RF-28 Doc Studio upload page)
+Current phase: Phase 3 - Doc Studio (in progress)
 Current sprint: RF-Sprint-1 (28 Jun - 5 Jul 2026)
-Overall progress: Tooling migration in progress
+Overall progress: Phase 3 started - RF-28 upload UI complete, RF-29 pending
 
 ---
 
@@ -13,7 +13,7 @@ Overall progress: Tooling migration in progress
 Phase | Name                        | Status      | Notes
 1     | Foundation and Setup        | Completed   | Sprint 1 - repo, scaffold, agents, MCP, security baseline
 2     | RAG Pipeline and Ingestion  | Completed   | All 9 Phase 2 stories QA-passed
-3     | Doc Studio                  | Not Started | Blocked on Phase 2
+3     | Doc Studio                  | In Progress | RF-28 upload UI complete on feature/RF-28-doc-studio-upload
 4     | ATS                         | Not Started | Blocked on Phase 1
 5     | Document Management         | Not Started | Blocked on Phase 2
 6     | Talent Finder               | Not Started | Blocked on Phase 1
@@ -74,6 +74,26 @@ RF-27 - [Backend] RAG agent tools (LlamaIndex) (QA PASSED)
 
 ---
 
+## Phase 3 - Doc Studio (in progress)
+
+### Completed
+RF-28 - [Frontend] Doc Studio document upload page with drag-and-drop, metadata form, backend API integration (feature branch committed, awaiting QA)
+
+### In Progress
+(none - RF-28 handed to QA)
+
+### Pending
+RF-29 - [Frontend] Upload progress indicators, file list, status polling, toasts (PROMPT-021; depends on PROMPT-020 Done -> now unblocked)
+
+### Blocked
+(none)
+
+### Notes for the project owner
+- API CONTRACT MISMATCH (frontend spec vs backend): PROMPT-020 specifies client_id defaults to the literal string "default", but the backend POST /api/v1/documents/upload requires client_id as a UUID (Form field typed as uuid.UUID). Sending "default" will produce HTTP 422 from the backend. Frontend implemented per the prompt literal; resolving this needs a project-owner decision (either the backend accepts a default client id, or the frontend must collect a real client UUID). Left as-is per scope discipline.
+- Pre-existing frontend lint tooling breakage (NOT introduced by RF-28): installed node_modules has eslint 8.57.1 while package.json / package-lock declare eslint ^9 / 9.39.4, and eslint.config.mjs (from the Next.js 16 upgrade PR #8) uses the old flat-config style `"eslint-config-next/core-web-vitals"` re-exported as an array, which is incompatible with eslint-config-next 16. `npx eslint .` fails locally with "Cannot find module / ... not iterable". CI uses `npm ci` from the lockfile so CI lint may resolve differently. Flagging for DevOps/Architect to either rebuild node_modules or rewrite eslint.config.mjs with @eslint/eslintrc FlatCompat. vitest (12/12) and `tsc --noEmit` both pass; prettier passes on all RF-28 files.
+
+---
+
 ## Security Audits
 
 ### Pre-Publication Git History Secret Scan (2026-07-03)
@@ -116,7 +136,7 @@ Branch: fix/ci-cost-reduction (not yet PR'd to staging)
 
 Agent              | Last Prompt | Status      | Branch
 Backend Dev         | PROMPT-019  | Complete    | feature/RF-23-chunking (latest fix)
-Frontend Dev        | PROMPT-006  | Complete    | feature/RF-11-nextjs-scaffold
+Frontend Dev        | PROMPT-020  | Complete    | feature/RF-28-doc-studio-upload
 Quality Analyst     | PROMPT-008  | Complete    | (all 9 QA reviews done)
 DevOps Eng          | PROMPT-009  | Complete    | fix/ci-cost-reduction
 CyberSecurity Eng   | PROMPT-010  | Complete    | feature/RF-15-security-baseline (merged)
@@ -146,6 +166,9 @@ ID | Type     | Severity | Agent         | Status
 RF-34 | Bug | Medium | Backend Dev | Fixed (doc_type enum, orphan cleanup, tests added)
 RF-21 | Bug | Medium | Backend Dev | Fixed (corrupt file handling, hardcoded bucket)
 RF-23 | Bug | Low | Backend Dev | Fixed (section fallback to paragraph chunking)
+RF-CONTRACT-1 | Spec mismatch | Medium | Frontend Dev / Backend Dev | Open - PROMPT-020 client_id default "default" (string) vs backend uuid.UUID requirement; results in HTTP 422. Needs owner decision.
+RF-LINT-1 | Tooling | Medium | DevOps Eng / Architect | Open - frontend eslint 8.57.1 installed vs 9.39.4 in lockfile; eslint.config.mjs flat-config style incompatible with eslint-config-next 16. `npx eslint .` broken locally.
+RF-UI-1 | Tech debt | Low | DevOps Eng / Frontend Dev | Open - design tokens (globals.css + tailwind.config.ts) were missing from the RF-11 scaffold, leaving shadcn semantic classes (bg-primary etc.) unresolvable. Wired as part of RF-28; remaining unformatted scaffold files flagged by prettier (7 files) are pre-existing and out of scope.
 
 ---
 

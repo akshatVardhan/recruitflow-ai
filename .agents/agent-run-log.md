@@ -16,6 +16,68 @@
 
 ---
 
+## Session: 20260704-FD-P020 - 2026-07-04 15:30
+Agent: Frontend Dev
+Prompt: PROMPT-020
+JIRA story: RF-28
+Branch: feature/RF-28-doc-studio-upload
+Session started: 14:50
+Session ended: 15:30
+Exit status: Complete
+
+Commits made:
+- b390a2d - feat(doc-studio): implement document upload page with drag-and-drop RF-28
+
+Files changed: 21 (17 new, 4 modified)
+New:
+- app/(dashboard)/doc-studio/page.tsx (rewritten from placeholder)
+- app/(dashboard)/doc-studio/page.test.tsx
+- app/(dashboard)/doc-studio/schema.ts (RHF + Zod schema + queue types)
+- app/(dashboard)/doc-studio/components/file-dropzone.tsx (+ .test.tsx)
+- app/(dashboard)/doc-studio/components/upload-metadata.tsx
+- app/(dashboard)/doc-studio/components/empty-state.tsx
+- components/ui/input.tsx, label.tsx, card.tsx, badge.tsx, select.tsx, toast.tsx, toaster.tsx
+- hooks/use-toast.tsx (standalone toast + useToast subscriber)
+- lib/api/documents.ts (+ .test.tsx) - uploadDocument multipart helper
+- lib/zod-resolver.ts - minimal RHF resolver over zod (no @hookform/resolvers dep)
+- vitest.setup.ts
+Modified:
+- app/(dashboard)/layout.tsx (mount <Toaster />)
+- app/(dashboard)/doc-studio/page.tsx
+- app/globals.css + tailwind.config.ts (wired design-system dark zinc tokens so shadcn semantic classes resolve)
+- types/api.ts (DocType, UploadMetadata, UploadResponse, DOC_TYPE_VALUES)
+- vitest.config.ts (setupFiles -> vitest.setup.ts)
+
+Tests passing: 12/12 (vitest run)
+- FileDropzone: accepts valid PDF/DOCX, rejects unsupported types, rejects >20MB, respects 10-file queue cap
+- DocStudioPage: renders empty state, adds file with filename-derived default title, uploads + removes on success, keeps failed file in queue with Failed badge
+- uploadDocument: posts multipart form fields with file/title/doc_type/client_id; propagates errors
+
+Type check: `npx tsc --noEmit` clean (strict mode)
+Prettier: all RF-28 files formatted (7 unformatted files remaining are pre-existing scaffold files outside this prompt's scope)
+
+progress.md updated: yes
+JIRA updated: pending (no MCP access in this session - needs transition to "In Testing" + signed completion comment)
+Notion updated: not required (no new endpoint contract; existing backend RF-34 contract consumed)
+
+Blockers encountered: none for PROMPT-020 literal scope.
+
+Notes for the project owner:
+1. API CONTRACT MISMATCH: PROMPT-020 step 3 specifies client_id defaults to the literal string "default", but the backend POST /api/v1/documents/upload (RF-34, backend/app/modules/documents/router.py:50) requires client_id typed as uuid.UUID. Sending "default" will return HTTP 422. Frontend was implemented per the prompt literal; resolving needs an owner decision (backend accepts default client id, or frontend collects a real client UUID). Logged as RF-CONTRACT-1 in progress.md Open Issues.
+2. Pre-existing frontend lint breakage (NOT introduced by RF-28): local node_modules has eslint 8.57.1 while package.json/lockfile declare ^9 / 9.39.4, and eslint.config.mjs (from Next.js 16 upgrade PR #8) imports the legacy-style `"eslint-config-next/core-web-vitals"` re-export and spreads it as a flat-config array, which is incompatible with eslint-config-next 16. `npx eslint .` fails locally ("Cannot find module" / "not iterable"). CI runs `npm ci` from the lockfile so may differ. Flagged as RF-LINT-1 for DevOps/Architect (rebuild node_modules + rewrite eslint.config.mjs with @eslint/eslintrc FlatCompat). Did NOT modify eslint.config.mjs (out of scope). vitest and tsc both pass; prettier is clean for all RF-28 files.
+3. Design tokens: the RF-11 scaffold left globals.css empty and tailwind.config.ts with no color extensions, so the existing components/ui/button.tsx semantic classes (bg-primary etc.) did not resolve. Wired the dark zinc palette from design-system.md as part of RF-28 since the new page depends on it. Flagged as RF-UI-1 (low).
+4. Toaster uses the already-installed @radix-ui/react-toast (Sonner is not installed; avoided npm install due to the earlier session's npm timeout risk). select.tsx is a styled native <select> for the same reason (no @radix-ui/react-select install).
+5. PROMPT-021 / RF-29 (upload progress, status polling, file list) is now unblocked and is the next Frontend prompt.
+
+Handover to QA:
+- Pull branch feature/RF-28-doc-studio-upload
+- cd frontend && npx vitest run (12 tests)
+- npx tsc --noEmit (clean)
+- npx prettier --check . (only pre-existing files warn)
+- Manual: start the backend + frontend (docker compose up), log in, navigate to /doc-studio, drop a PDF, edit title/type/client_id, click Upload, observe success toast and row removal. Note the client_id "default" will 422 against the real backend until RF-CONTRACT-1 is resolved - use a real client UUID for a live end-to-end test.
+
+---
+
 ## Session: 20260704-FD-P019 - 2026-07-04 14:30
 Agent: Frontend Dev
 Type: Process improvement - role identity verification step -- process work, normally Architect scope
