@@ -98,6 +98,13 @@ Rules (non-negotiable):
 - PR to staging requires: QA passed + JIRA completion comment with What Changed + JIRA in "In Review"
 - PR to main requires: CyberSecurity sign-off comment on the staging PR
 
+Branch push rule (non-negotiable):
+- A branch is not complete when it is committed locally. It is complete only when it has been pushed to origin (git push -u origin <branch-name>).
+- Every feature/, bugfix/, and hotfix/ branch MUST be pushed to GitHub before the session is considered done -- a local-only branch is invisible to QA, CyberSecurity, and the project owner, and blocks the entire downstream review pipeline.
+- QA (not the coding agent) is responsible for raising the PR to staging once QA passes. The coding agent only pushes the branch; it does not open the PR unless explicitly instructed by the project owner.
+- Verify the push succeeded (git status shows "Your branch is up to date with 'origin/...'") before writing "Branch pushed: yes" in any tracking file or JIRA comment.
+- If the push fails (auth, network, protected-branch rejection), the session is Blocked, not Complete -- record the failure in progress.md and agent-run-log.md and stop.
+
 Commit message format:
 type(scope): short description RF-{issue-number}
 

@@ -25,7 +25,7 @@
 ### PROMPT-020
 Agent: Frontend Dev
 JIRA: RF-28
-Status: Pending
+Status: Done
 Depends on: PROMPT-006 Done (Frontend scaffold exists and is functional)
 Priority: High
 

@@ -150,11 +150,14 @@ During work:
 On completing a task:
 1. Run: npx vitest run (all must pass)
 2. Run: npx eslint . and npx prettier --check .
-3. Update /manual/code-changes.md with new entry
-4. Update /manual/progress.md agent row
-5. Update /manual/agent-run-log.md
-6. Post JIRA completion comment (see conventions.md for format)
-7. Transition story to "In Testing"
+3. Push the feature branch to origin: git push -u origin feature/RF-{number}-{description} (see conventions.md "Branch push rule" -- a local-only branch is not done; QA cannot review what is not on GitHub). Verify the push succeeded (git status shows "up to date with 'origin/...'") before marking the session Complete. If the push fails, the session is Blocked.
+4. Update /manual/code-changes.md with new entry
+5. Update /manual/progress.md agent row
+6. Update /manual/agent-run-log.md
+7. Post JIRA completion comment (see conventions.md for format)
+8. Transition story to "In Testing"
+
+Note on PRs: QA (not Frontend Dev) raises the PR to staging after QA passes. Do not open the PR yourself unless explicitly instructed by the project owner.
 
 Story points: 1 for a single component or simple page, 2 for complex screen with multiple states or a full feature UI.
 
