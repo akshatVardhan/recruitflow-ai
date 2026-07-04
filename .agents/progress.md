@@ -139,7 +139,7 @@ Backend Dev         | PROMPT-019  | Complete    | feature/RF-23-chunking (latest
 Frontend Dev        | PROMPT-020  | Complete    | feature/RF-28-doc-studio-upload
 Quality Analyst     | PROMPT-008  | Complete    | (all 9 QA reviews done)
 DevOps Eng          | PROMPT-009  | Complete    | fix/ci-cost-reduction
-CyberSecurity Eng   | PROMPT-010  | Complete    | feature/RF-15-security-baseline (merged)
+CyberSecurity Eng   | PROMPT-010  | Complete    | feature/RF-15-security-baseline (merged) | **NEW: 21 CVEs discovered by fixed pip-audit -- see Ad-hoc CI Fixes section for handover**
 Architect           | (not yet run) | Ready    | (no branch)
 
 ---
@@ -161,13 +161,33 @@ Production deploy status: not deployed yet
 
 ## Ad-hoc CI Fixes
 
-### pip-audit timeout fix (2026-07-05)
+### pip-audit hang fix and CVE handover to CyberSecurity (2026-07-05)
 
-Investigated a hung security scan on PR #24 (run 28715574449). pip-audit was stuck for 12+ hours querying the OSV API with no timeout. Fix: added `--timeout 30` to the pip-audit command in `.github/workflows/security.yml`.
+Investigated a hung security scan on PR #24 (run 28715574449). pip-audit was stuck for 12+ hours due to its internal dependency resolution phase having no timeout for large transitive dep trees (sentence-transformers, litellm).
 
-Branch: fix/pip-audit-timeout (pushed, no PR yet)
+**Fix applied (branch: fix/pip-audit-timeout, PR #28):**
+- Restructured security workflow: `pip install -r backend/requirements.txt` first (pip has built-in timeout/retry), then `pip-audit` on installed packages (no dep resolution needed -- completes in seconds)
+- Added pip caching via `setup-python@v5 cache: pip`
+- Total run time: ~7 min (mostly cold cache pip install), pip-audit completed in 5 seconds
+
+**Newly discovered CVEs (pip-audit now completes instead of hanging):**
+
+The following 21 CVEs were always present but never surfaced because pip-audit never reached the OSV API before hanging. Handover to CyberSecurity:
+
+| Package | Version | CVEs | Fix Version |
+|---|---|---|---|
+| black | 24.8.0 | GHSA-3936-cmfr-pm3m | 26.3.1 |
+| pytest | 8.3.3 | GHSA-6w46-j5rx-g56g | 9.0.3 |
+| python-jose | 3.3.0 | PYSEC-2024-232, PYSEC-2025-185 | 3.4.0 |
+| python-multipart | 0.0.12 | 7 CVEs (GHSA-59g5-xgcq-4qw3, GHSA-wp53-j4wj-2cfg, GHSA-mj87-hwqh-73pj, GHSA-pp6c-gr5w-3c5g, GHSA-v9pg-7xvm-68hf, GHSA-5rvq-cxj2-64vf, GHSA-6jv3-5f52-599m) | 0.0.31 |
+| starlette | 0.38.6 | 8 CVEs (PYSEC-2026-161, PYSEC-2026-249, PYSEC-2026-248, GHSA-f96h-pmfr-66vw, GHSA-2c2j-9gv5-cj73, GHSA-wqp7-x3pw-xc5r, GHSA-x746-7m8f-x49c, GHSA-wqp7-x3pw-xc5r) | 1.1.0 |
+| transformers | 4.57.6 | PYSEC-2025-217, GHSA-69w3-r845-3855, GHSA-29pf-2h5f-8g72 | 5.3.0 |
+
+**Action needed:** CyberSecurity Eng should triage each CVE, determine severity for this project's context, and either bump pinned versions or add `--ignore-vuln` flags with JIRA tracking keys per policy. Recommend starting with python-multipart and starlette since they are runtime dependencies with the most CVEs. Dev dependencies (black, pytest) can be waived if low risk.
 
 ---
+
+## Open Issues
 
 ## Open Issues
 
@@ -179,6 +199,7 @@ RF-23 | Bug | Low | Backend Dev | Fixed (section fallback to paragraph chunking)
 RF-CONTRACT-1 | Spec mismatch | Medium | Frontend Dev / Backend Dev | Open - PROMPT-020 client_id default "default" (string) vs backend uuid.UUID requirement; results in HTTP 422. Needs owner decision.
 RF-LINT-1 | Tooling | Medium | DevOps Eng / Architect | Open - frontend eslint 8.57.1 installed vs 9.39.4 in lockfile; eslint.config.mjs flat-config style incompatible with eslint-config-next 16. `npx eslint .` broken locally.
 RF-UI-1 | Tech debt | Low | DevOps Eng / Frontend Dev | Open - design tokens (globals.css + tailwind.config.ts) were missing from the RF-11 scaffold, leaving shadcn semantic classes (bg-primary etc.) unresolvable. Wired as part of RF-28; remaining unformatted scaffold files flagged by prettier (7 files) are pre-existing and out of scope.
+RF-CVE-1 | Dependency | Mixed | CyberSecurity Eng | Open - 21 CVEs discovered in 6 pinned packages after pip-audit hang fix. See Ad-hoc CI Fixes section for full list. Triage needed.
 
 ---
 
