@@ -7,9 +7,8 @@
 
 - Project name: RecruitFlow AI
 - JIRA project key: RF
-- Active sprint: RF-Sprint-1 (28 Jun - 5 Jul 2026)
+- Active sprint: RF-Sprint-2 (2 Jul - 16 Jul 2026)
 - Repository: github.com/akshatvardhan/recruitflow-ai (update with actual URL)
-- Notion workspace: RecruitFlow AI
 - GCP project: recruitflow-ai-500719
 
 ---
@@ -30,7 +29,6 @@ Do not use emojis anywhere in this project unless explicitly requested by the pr
 This applies without exception to:
 
 - JIRA issue descriptions, comments, and summaries
-- Notion pages and documentation
 - Code comments and inline documentation
 - Git commit messages and PR descriptions
 - All agent files: progress.md, prompts.md, agent-run-log.md
@@ -42,13 +40,10 @@ Use plain text, dashes, and standard punctuation instead.
 
 ## Agent Self-Attribution
 
-Every JIRA comment, Notion edit, and agent-run-log entry must begin with a signed header.
+Every JIRA comment and agent-run-log entry must begin with a signed header.
 
 Format for JIRA comments:
 [AGENT: Backend Dev] - RF-10 - 2026-06-30
-
-Format for Notion edits (append to page edit log):
-| 2026-06-30 | Backend Dev | Added POST /api/v1/documents/upload contract |
 
 Format for agent-run-log.md entries:
 Session ID: 20260630-BD-P004
@@ -155,7 +150,7 @@ Expected unblock date: When RF-10 is in "Completed"
 Cancellation comment format:
 [AGENT: DevOps] - RF-14 - 2026-06-30
 Status: Cancelled
-Reason: Notion workspace setup was completed manually by project owner. No further action needed.
+Reason: Manual completion by project owner outside the agent workflow. No further action needed.
 
 ---
 
@@ -183,7 +178,6 @@ Handover to QA:
 - {any seed data or env vars needed}
 
 progress.md updated: yes
-Notion updated: {yes / not required}
 
 ---
 
@@ -227,10 +221,17 @@ Tests passing: {X}/{Y}
 
 progress.md updated: yes/no
 JIRA updated: yes/no
-Notion updated: yes/no
 
 Blockers encountered: {none / description}
 Notes: {anything the project owner should know}
+
+Use the full format above for coding sessions with commits. For low-stakes or process-only sessions, role files may instead call for a run-log entry (short format):
+
+## Session: {session-id} - {date} {time}
+Agent: {Agent Name}
+JIRA story: {RF-XX / none}
+Branch: {branch name / none}
+Outcome: {one-line summary of what was done and its result}
 
 ---
 
@@ -251,13 +252,7 @@ When a coding agent transitions a story to "In Testing", QA must:
 
 ## CyberSecurity Staging Review Rules
 
-When a PR is raised to staging, CyberSecurity agent must:
-1. Review the PR diff
-2. Run pip-audit (backend) or npm audit (frontend)
-3. Post a signed review comment on the PR:
-   - [SECURITY REVIEW: APPROVED] or [SECURITY REVIEW: CHANGES REQUESTED]
-   - List any findings with severity
-4. Only after APPROVED comment can the PR be merged to staging
+The review process, checklist, and severity handling are owned by .agents/roles/cybersecurity-eng.md -- see that file for the full procedure. The comment format below is kept here because the role file points back to it.
 
 CyberSecurity review comment format (on GitHub PR):
 [AGENT: CyberSecurity] - PR #{number} - {date}
@@ -276,36 +271,14 @@ Findings:
 - [HIGH] {description} - {file:line}
 - [MEDIUM] {description} - {file:line}
 
-Notion updated: /Security Reviews/{sprint}-{feature} yes/no
-
 ---
 
-## Notion Pages (4 pages only) + docs/ADR.md
+## Architectural Decisions (docs/ADR.md)
 
-All other documentation lives in the repository.
+All documentation lives in the repository.
 
-Page 1: /RecruitFlow AI/API Contracts/
-- Maintained by: Backend Dev
-- One sub-page per feature module
-- Updated whenever an endpoint is added or changed
-
-Page 2: /RecruitFlow AI/Local Setup Guide
-- Maintained by: DevOps Eng
-- Step-by-step guide to run the full stack locally
-- Updated whenever setup steps change
-
-Page 3: /RecruitFlow AI/Environment Variables
-- Maintained by: DevOps Eng
-- Full list of all env vars, purpose, which service provides them
-- No actual values, only names and descriptions
-
-Page 4: /RecruitFlow AI/Security Reviews/
-- Maintained by: CyberSecurity Eng
-
-Architectural Decisions:
 - docs/ADR.md - Maintained by: Architect
 - One entry per significant architectural decision (new tool, provider switch, major dependency, pattern change)
-- One sub-page per sprint per reviewed feature
 - Updated after every staging review
 
 ---
@@ -318,15 +291,14 @@ Tokens location: Doppler (never in config.json or any file, never committed)
 MCP servers:
 - GitHub: repo and PR read/write, CI status
 - JIRA: Atlassian Rovo MCP (https://mcp.atlassian.com/v1/mcp)
-- Notion: read/write scoped to RecruitFlow AI workspace
 
 Per-agent MCP access:
-- Backend Dev: JIRA (own stories), Notion (API Contracts write), GitHub (branches + commits)
-- Frontend Dev: JIRA (own stories), Notion (API Contracts read), GitHub (branches + commits)
+- Backend Dev: JIRA (own stories), GitHub (branches + commits)
+- Frontend Dev: JIRA (own stories), GitHub (branches + commits)
 - Quality Analyst: JIRA (read all + create bugs), GitHub (read PRs + CI)
-- DevOps Eng: JIRA (own stories), Notion (Setup Guide + Env Vars write), GitHub (full)
-- CyberSecurity Eng: JIRA (read all + create security tasks), Notion (Security Reviews write), GitHub (PR review)
-- Architect: GitHub (read only), Notion (read API Contracts)
+- DevOps Eng: JIRA (own stories), GitHub (full)
+- CyberSecurity Eng: JIRA (read all + create security tasks), GitHub (PR review)
+- Architect: GitHub (read only)
 
 Load only the MCP servers your role needs per session to preserve context window.
 
@@ -363,6 +335,11 @@ Only these files exist for state tracking, ever:
 - .agents/progress.md
 - .agents/prompts.md
 - .agents/agent-run-log.md
+
+Additionally, these three read-only historical archive files are permitted -- they hold relocated (not summarized) content from the files above and must never be read during normal sessions:
+- .agents/archive/prompts-archive.md
+- .agents/archive/progress-archive.md
+- .agents/archive/agent-run-log-archive.md
 
 No agent may create a new tracking, notes, or status file under any name, for any reason. If you believe additional tracking is needed, write a note explaining why inside progress.md and wait for the project owner to decide -- never create the file yourself.
 
@@ -415,6 +392,10 @@ recruitflow-ai/
         Dockerfile
         requirements.txt
     .agents/
+        archive/
+            prompts-archive.md
+            progress-archive.md
+            agent-run-log-archive.md
         knowledge/
             design-system.md
             schema.md
@@ -439,7 +420,6 @@ recruitflow-ai/
             backend.yml
             backend-deploy.yml
             frontend.yml
-    docker-compose.yml
     .env.example
     AGENTS.md
     README.md
