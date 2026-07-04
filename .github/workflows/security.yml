@@ -29,7 +29,8 @@ jobs:
 
       - name: pip-audit (blocking)
         # CVE-2024-33664, CVE-2024-33665 tracked in RF-63, remove on PyJWT migration
-        run: pip-audit -r backend/requirements.txt --ignore-vuln CVE-2024-33664 --ignore-vuln CVE-2024-33665
+        # --timeout 30 prevents indefinite hang on OSV API (observed 12+ hour stalls)
+        run: pip-audit -r backend/requirements.txt --timeout 30 --ignore-vuln CVE-2024-33664 --ignore-vuln CVE-2024-33665
 
       - name: Bandit static analysis (blocking, medium+ severity)
         run: bandit -r backend/app -ll
