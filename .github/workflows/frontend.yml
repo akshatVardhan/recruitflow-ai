@@ -11,11 +11,9 @@ on:
     branches:
       - staging
       - main
-    paths:
-      - "frontend/**"
 
 jobs:
-  lint-and-test:
+  frontend-ci:
     runs-on: ubuntu-latest
     defaults:
       run:

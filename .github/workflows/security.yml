@@ -1,0 +1,38 @@
+name: Security
+
+on:
+  pull_request:
+    branches: [staging, main]
+  push:
+    branches: [staging, main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks (secret scan, full history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install scanners
+        run: pip install pip-audit bandit
+
+      - name: pip-audit (blocking)
+        # CVE-2024-33664, CVE-2024-33665 tracked in RF-63, remove on PyJWT migration
+        run: pip-audit -r backend/requirements.txt --ignore-vuln CVE-2024-33664 --ignore-vuln CVE-2024-33665
+
+      - name: Bandit static analysis (blocking, medium+ severity)
+        run: bandit -r backend/app -ll
+
+      - name: Policy checks (project invariants)
+        run: python scripts/policy_check.py
