@@ -23,14 +23,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
 
       - name: Install scanners
         run: pip install pip-audit bandit
 
+      # Install deps first (pip has built-in timeout/retry).
+      # Then audit installed packages (no dep resolution needed -- fast).
+      - name: Install project dependencies
+        run: pip install -r backend/requirements.txt
       - name: pip-audit (blocking)
         # CVE-2024-33664, CVE-2024-33665 tracked in RF-63, remove on PyJWT migration
-        # --timeout 30 prevents indefinite hang on OSV API (observed 12+ hour stalls)
-        run: pip-audit -r backend/requirements.txt --timeout 30 --ignore-vuln CVE-2024-33664 --ignore-vuln CVE-2024-33665
+        run: pip-audit --ignore-vuln CVE-2024-33664 --ignore-vuln CVE-2024-33665
 
       - name: Bandit static analysis (blocking, medium+ severity)
         run: bandit -r backend/app -ll
