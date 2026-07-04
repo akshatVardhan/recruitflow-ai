@@ -159,6 +159,16 @@ Production deploy status: not deployed yet
 
 ---
 
+## Ad-hoc CI Fixes
+
+### pip-audit timeout fix (2026-07-05)
+
+Investigated a hung security scan on PR #24 (run 28715574449). pip-audit was stuck for 12+ hours querying the OSV API with no timeout. Fix: added `--timeout 30` to the pip-audit command in `.github/workflows/security.yml`.
+
+Branch: fix/pip-audit-timeout (pushed, no PR yet)
+
+---
+
 ## Open Issues
 
 ID | Type     | Severity | Agent         | Status
