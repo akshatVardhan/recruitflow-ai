@@ -250,26 +250,7 @@ When a coding agent transitions a story to "In Testing", QA must:
 
 ---
 
-## CyberSecurity Staging Review Rules
-
-The review process, checklist, and severity handling are owned by .agents/roles/cybersecurity-eng.md -- see that file for the full procedure. The comment format below is kept here because the role file points back to it.
-
-CyberSecurity review comment format (on GitHub PR):
-[AGENT: CyberSecurity] - PR #{number} - {date}
-Session: {session-id}
-
-Checks performed:
-- Auth bypass attempts: pass/fail
-- Input validation review: pass/fail
-- No secrets in code: pass/fail
-- File upload safety (if applicable): pass/fail
-- Dependency CVE scan: pass/fail - {findings or "none"}
-
-Result: APPROVED / CHANGES REQUESTED
-
-Findings:
-- [HIGH] {description} - {file:line}
-- [MEDIUM] {description} - {file:line}
+CyberSecurity review process: see .agents/roles/cybersecurity-eng.md (Evidence Rule, Scope Rule, Severity Actions, Review Process).
 
 ---
 
