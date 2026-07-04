@@ -1,0 +1,15 @@
+{
+  "_instructions": "All tokens come from Doppler. No .env file exists or should ever exist here. To set up: run 'doppler secrets download --no-file --format=json' to see the values, then set each as a Windows user environment variable (Settings -> System -> About -> Advanced system settings -> Environment Variables -> User variables). After that, $VAR references below resolve automatically on OpenCode start.",
+  "mcpServers": {
+    "github": {
+      "type": "github",
+      "token": "$GITHUB_MCP_TOKEN"
+    },
+    "jira": {
+      "type": "atlassian",
+      "apiToken": "$JIRA_API_TOKEN",
+      "email": "$JIRA_EMAIL",
+      "baseUrl": "$JIRA_BASE_URL"
+    }
+  }
+}

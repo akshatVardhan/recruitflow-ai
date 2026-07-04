@@ -1,4 +1,4 @@
-"""Tests for auto-tagging via DeepSeek V4-Flash."""
+"""Tests for auto-tagging via Z.AI GLM 5.2."""
 
 import json
 import uuid

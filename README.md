@@ -8,7 +8,7 @@ AI-powered recruitment platform for staffing and recruitment firms.
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, shadcn/ui, TanStack React Query
 - **Database**: PostgreSQL 15, Redis 7, Qdrant (vector DB)
 - **File Storage**: MinIO (dev), GCP Cloud Storage (prod)
-- **LLM**: DeepSeek via LiteLLM
+- **LLM**: Z.AI GLM 5.2 via LiteLLM
 - **Infrastructure**: GCP Cloud Run (prod), Vercel (frontend)
 
 ## Setup Instructions

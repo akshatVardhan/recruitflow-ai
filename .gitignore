@@ -1,7 +1,6 @@
-# Agent orchestration - local only, never commit
-.agents/
-agents/
-.opencode/
+# .opencode/ is tracked (MCP config + agent discovery for OpenCode runtime)
+# .claude/ is Claude Code-specific and not compatible with current tooling
+.claude/
 
 # Environment variables - never commit
 .env
