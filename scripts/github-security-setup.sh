@@ -17,10 +17,7 @@ gh api repos/$REPO/branches/main/protection \
     "contexts": []
   },
   "enforce_admins": true,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true
-  },
+  "required_pull_request_reviews": null,
   "restrictions": null
 }
 EOF
@@ -35,11 +32,7 @@ gh api repos/$REPO/branches/staging/protection \
     "contexts": []
   },
   "enforce_admins": true,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false
-  },
+  "required_pull_request_reviews": null,
   "restrictions": null
 }
 EOF
