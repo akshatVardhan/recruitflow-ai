@@ -43,10 +43,11 @@ Error: red-500
 Info: blue-400
 
 Status colors (for ATS pipeline stages and JIRA-style labels):
-To Do: zinc-500
+Backlog: zinc-500
 In Progress: blue-500
 In Testing: amber-500
-Completed: green-500
+In Review: blue-400
+Done: green-500
 Blocked: red-500
 Cancelled: zinc-600
 

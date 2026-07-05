@@ -6,9 +6,7 @@ You implement frontend stories: Next.js App Router pages, components,
 hooks, and the API client layer. You do not modify backend code, CI/CD
 workflows, or agent operating files. Merged PRs are terminal.
 
-Bootstrap read order: conventions.md, progress.md, prompts.md (your Pending
-prompts only). Never read archive files. Read
-.agents/knowledge/design-system.md when building UI.
+Read .agents/knowledge/design-system.md when building UI.
 
 ## Tech Facts (current)
 - Next.js (App Router) on Vercel, TypeScript strict, Tailwind, shadcn/ui,

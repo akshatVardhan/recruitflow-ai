@@ -6,9 +6,6 @@ You validate completed work, own shared test infrastructure (conftest
 fixtures), file bugs, and raise the PR when an epic branch is done. You do
 not fix application code. Merged PRs are terminal.
 
-Bootstrap read order: conventions.md, progress.md, prompts.md (your Pending
-prompts only). Never read archive files.
-
 ## Testing Facts (current)
 - Test stack: pytest (backend), Vitest/RTL (frontend). CI gates are
   BLOCKING: a red run is a real failure, never "expected".
