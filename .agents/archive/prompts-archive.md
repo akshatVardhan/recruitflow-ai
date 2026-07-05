@@ -59,6 +59,69 @@ Commit message: feat(doc-studio): implement document upload page with drag-and-d
 
 ---
 
+### PROMPT-011
+Agent: Backend Dev
+JIRA: RF-34
+Status: Done
+Depends on: Phase 1 complete (all PROMPT-001 through PROMPT-010 Done)
+Priority: High
+
+Task:
+Implement the document upload endpoint with database model, file storage, and first Alembic migration.
+
+Steps:
+
+1. Add to requirements.txt:
+   - PyMuPDF (fitz) for PDF parsing
+   - python-docx for DOCX parsing
+   - python-multipart (for FastAPI file upload)
+
+2. Add `doc_upload_bucket: str = "recruitflow-documents"` to core/config.py Settings class.
+
+3. Implement SQLAlchemy model in modules/documents/models.py matching schema.md `documents` table:
+   - id: UUID PK
+   - client_id, user_id: FK to clients, users
+   - title, doc_type (enum), file_path, file_name, file_size_kb, mime_type
+   - extracted_text: TEXT nullable
+   - auto_tags: JSONB nullable
+   - manual_tags: ARRAY TEXT nullable
+   - created_at, updated_at, deleted_at (soft delete)
+   - Use `from app.core.database import Base`
+
+4. Implement Pydantic schemas in modules/documents/schemas.py:
+   - DocumentUploadResponse: id, title, doc_type, file_name, file_size_kb, status, created_at
+   - DocumentStatusResponse: id, title, doc_type, status ("uploaded" / "processing" / "completed" / "failed"), created_at
+   - DocumentDetailResponse: all fields including extracted_text (truncated) and auto_tags
+
+5. Implement service in modules/documents/service.py:
+   - `async def create_document(db, client_id, user_id, title, doc_type, file, storage)`:
+     - Generate UUID
+     - Upload file bytes via core/storage.py upload_file (GCS in production, MinIO for local dev)
+     - Insert record into documents table
+     - Return document record
+   - `async def get_document(db, document_id)` - fetch by ID
+   - `async def get_document_status(db, document_id)` - return status only
+
+6. Update router in modules/documents/router.py:
+   - POST /upload - accepts UploadFile + form fields (client_id, title, doc_type)
+   - GET /{document_id} - returns document detail
+   - GET /{document_id}/status - returns status
+
+   All endpoints prefixed with /api/v1/documents (already configured in api_router.py).
+
+7. Create Alembic migration 003 for documents table:
+   - Run manually: cd backend && alembic revision --autogenerate -m "create documents table"
+   - Verify the migration file is correct per schema.md
+   - Migration must create the document_type enum, documents table, and all indexes from schema.md
+
+8. Update conftest.py tests if needed.
+
+9. API contracts are self-documented via FastAPI's auto-generated OpenAPI schema (/docs) -- no manual doc update needed.
+
+Commit message: feat(documents): implement upload endpoint with DB model and MinIO storage RF-34
+
+---
+
 ### PROMPT-012
 Agent: Backend Dev
 JIRA: RF-20

@@ -153,6 +153,4 @@ Completed by Frontend Dev (Session: 20260704-FD-P018) -- infra/config work, norm
 - Agent knowledge files updated: backend-dev.md, schema.md, prompts.md, progress.md, conventions.md
 - LiteLLM model string changed from "deepseek/deepseek-v4-flash" to "zai/glm-5.2"
 - No remaining deepseek references in active code or config files
-
-### Notion update needed
-- Environment Variables page: Replace DEEPSEEK_API_KEY with ZAI_API_KEY
+- Notion was retired as a docs tool before this migration; the env var rename is already captured in docs/ADR.md (ADR-006) — no further doc update needed
