@@ -110,6 +110,12 @@ Branch push rule (non-negotiable):
 - Verify the push succeeded (git status shows "Your branch is up to date with 'origin/...'") before writing "Branch pushed: yes" in any tracking file or JIRA comment.
 - If the push fails (auth, network, protected-branch rejection), the session is Blocked, not Complete -- record the failure in progress.md and agent-run-log.md and stop.
 
+Worktree isolation rule (non-negotiable):
+- This repo's main working directory may be shared across multiple concurrent agent sessions. Never `git checkout`/switch branches directly in that shared root -- another session's in-progress, uncommitted work can be silently disturbed, and a session can find itself running against the wrong branch entirely (this has happened: a session once operated against `main` believing it was on `staging`, because the shared directory had been switched underneath it).
+- Before starting work on any branch, create an isolated worktree instead: `git worktree add <path> -b <branch-name> origin/staging` (or without `-b` to check out an existing branch). Do all edits, commits, and pushes inside that worktree, not the shared root.
+- Remove the worktree (`git worktree remove <path>`) once the branch is pushed and you're done with it, to avoid accumulating stale worktrees. Leaving one in place while a PR is still open and might need follow-up commits is fine.
+- Read-only investigation (git log, diff, grep across a branch) does not require a worktree -- only checkouts and edits do.
+
 Commit message format:
 type(scope): short description RF-{issue-number}
 
