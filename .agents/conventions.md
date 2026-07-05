@@ -91,7 +91,17 @@ Rules (non-negotiable):
 - Every feature or bugfix branch requires a PR to staging
 - Staging requires a PR to main
 - PR to staging requires: QA passed + JIRA completion comment with What Changed + JIRA in "In Review"
-- PR to main requires: CyberSecurity sign-off comment on the staging PR
+- PR to main requires: CyberSecurity sign-off comment on the staging PR, OR --
+  for solo-operator merges where no independent reviewer is available -- an
+  explicit owner-approved exception noted in the PR description. This
+  mirrors the existing `required_pull_request_reviews: null` exception
+  already applied to branch protection for the same root cause (single-
+  account repo, GitHub blocks self-approval; see the "Manual Override"
+  commit that removed the required-approving-review-count gate). This does
+  not waive required CI status checks (backend-ci/frontend-ci/security
+  still must pass), and does not waive the underlying security review work
+  when a reviewer is practically available -- it only removes the blocking
+  gate when one genuinely isn't.
 
 Branch push rule (non-negotiable):
 - A branch is not complete when it is committed locally. It is complete only when it has been pushed to origin (git push -u origin <branch-name>).
