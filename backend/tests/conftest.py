@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from httpx import AsyncClient, ASGITransport
 
@@ -10,13 +12,25 @@ def anyio_backend():
     return "asyncio"
 
 
+async def _reset_tables(create: bool) -> None:
+    # dispose before/after so no pooled connection outlives the throwaway
+    # loop that asyncio.run() creates for this fixture (see setup_database).
+    await engine.dispose()
+    async with engine.begin() as conn:
+        await conn.run_sync(
+            Base.metadata.create_all if create else Base.metadata.drop_all
+        )
+    await engine.dispose()
+
+
 @pytest.fixture(autouse=True)
-async def setup_database():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+def setup_database():
+    # Plain (sync) fixture: pytest 9 removed support for sync tests depending
+    # on an async autouse fixture, so the async setup/teardown is driven via
+    # asyncio.run() instead of `async def` + yield.
+    asyncio.run(_reset_tables(create=True))
     yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    asyncio.run(_reset_tables(create=False))
 
 
 @pytest.fixture

@@ -205,8 +205,8 @@ async def score_resume_fn(resume_id: str, jd_id: str) -> str:
         f"Score the following resume against the job description. "
         f"Provide a JSON response with: overall_score (0-100), skills_match (list of matched skills), "
         f"missing_skills (list), experience_relevance (0-100), education_match (bool), recommendation (strong/medium/weak).\n\n"
-        f"Job Description:\n{jd.extracted_text[:3000]}\n\n"
-        f"Resume:\n{resume.extracted_text[:3000]}"
+        f"Job Description:\n{(jd.extracted_text or '')[:3000]}\n\n"
+        f"Resume:\n{(resume.extracted_text or '')[:3000]}"
     )
 
     response = await litellm.acompletion(
@@ -257,7 +257,7 @@ async def list_candidates_fn(
     Returns:
         JSON string with matching candidates
     """
-    qdrant_filter = {"client_id": client_id}
+    qdrant_filter: dict[str, str | list[str]] = {"client_id": client_id}
     query_parts = []
 
     if skills:
