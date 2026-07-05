@@ -13,7 +13,7 @@ prompts only). Never read archive files.
 - GCP project: recruitflow-ai-500719, region asia-south1.
 - Cloud Run: recruitflow-backend (API); a second worker service ships with
   RF-55. Cloud SQL: recruitflow-ai-500719:asia-south1:recruitflow-db
-  (PostgreSQL 16). Artifact Registry: asia-south1-docker.pkg.dev/
+  (PostgreSQL 15). Artifact Registry: asia-south1-docker.pkg.dev/
   recruitflow-ai-500719/recruitflow.
 - Dev/test is GCP-only. Docker Compose is RETIRED by owner decision - never
   create docker-compose.yml, never document it as the local stack.
