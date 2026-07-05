@@ -26,7 +26,6 @@ class Settings(BaseSettings):
 
     sentry_dsn_backend: str = ""
 
-    litellm_api_key: str = ""
     deepinfra_api_key: str = ""
     proxycurl_api_key: str = ""
 
