@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import ssl
 
 from celery import Celery
 from sqlalchemy import select
@@ -25,6 +26,12 @@ celery_app.conf.update(
     task_track_started=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
+    # Required whenever redis_url uses rediss:// (Upstash and most managed
+    # Redis do) - Celery's redis result backend raises at task-send time
+    # without this, even though the broker connection alone works fine.
+    # No-op for plain redis:// (e.g. local fallback), safe to always set.
+    broker_use_ssl={"ssl_cert_reqs": ssl.CERT_REQUIRED},
+    redis_backend_use_ssl={"ssl_cert_reqs": ssl.CERT_REQUIRED},
 )
 
 
