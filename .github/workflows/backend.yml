@@ -13,15 +13,13 @@ on:
     branches:
       - staging
       - main
-    paths:
-      - "backend/**"
 
 jobs:
-  lint-and-test:
+  backend-ci:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: postgres:15
         env:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
@@ -61,10 +59,14 @@ jobs:
         run: black --check backend/
 
       - name: MyPy check
-        run: mypy backend/app/ --ignore-missing-imports || echo "mypy warnings (non-blocking)"
+        run: mypy backend/app/ --ignore-missing-imports
 
       - name: pip-audit
-        run: pip-audit || echo "pip-audit warnings (non-blocking)"
+        # PYSEC-2026-597: zip-slip in nltk's downloader, pulled in transitively by
+        # llama-index-core (nltk>=3.9.3); no fixed nltk release exists yet and this
+        # codebase never calls nltk's corpus downloader, so it isn't reachable.
+        # Re-check on the next llama-index-core/nltk bump.
+        run: pip-audit --ignore-vuln PYSEC-2026-597
 
       - name: Run tests
-        run: cd backend && pytest tests/ -v || echo "test warnings (non-blocking - requires DB services)"
+        run: cd backend && pytest tests/ -v

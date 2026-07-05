@@ -102,6 +102,9 @@ async def embed_and_store_chunks(
         )
         point_ids.append(point_id)
 
-    client.upsert(collection_name=collection, points=points)
+    # qdrant-client's stub types `points` as PointStruct objects, but the client
+    # accepts plain dicts at runtime (pydantic-parses them); not worth the
+    # PointStruct construction churn for this pass.
+    client.upsert(collection_name=collection, points=points)  # type: ignore[arg-type]
     logger.info(f"Stored {len(points)} vectors in Qdrant collection '{collection}'")
     return point_ids

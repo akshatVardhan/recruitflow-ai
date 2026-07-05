@@ -25,9 +25,8 @@ async def create_document(
     file_size_kb = len(file_bytes) // 1024
 
     doc_id = uuid.uuid4()
-    file_ext = (
-        file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "bin"
-    )
+    filename = file.filename or ""
+    file_ext = filename.rsplit(".", 1)[-1] if "." in filename else "bin"
     file_path = f"documents/{client_id}/{doc_id}.{file_ext}"
 
     # Upload blob to storage first

@@ -31,7 +31,9 @@ def test_semantic_search_empty_results():
 async def test_hybrid_search_empty():
     """Hybrid search with no data should return empty results."""
     mock_db = AsyncMock()
-    mock_db.execute.return_value.all.return_value = []
+    mock_result = MagicMock()
+    mock_result.all.return_value = []
+    mock_db.execute.return_value = mock_result
 
     with patch("app.modules.rag.retriever.semantic_search", return_value=[]):
         result = await hybrid_search(mock_db, "python", "client-1")

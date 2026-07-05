@@ -1,4 +1,5 @@
 import logging
+from typing import TypedDict
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -19,8 +20,15 @@ _client: QdrantClient | None = None
 VECTOR_SIZE = 384  # BAAI/bge-small-en-v1.5 output dimension
 DISTANCE = Distance.COSINE
 
+
+class CollectionConfig(TypedDict):
+    vector_size: int
+    distance: Distance
+    payload_schema: dict[str, PayloadSchemaType]
+
+
 # Collection definitions matching schema.md
-COLLECTIONS = {
+COLLECTIONS: dict[str, CollectionConfig] = {
     "resumes": {
         "vector_size": VECTOR_SIZE,
         "distance": DISTANCE,
@@ -28,7 +36,7 @@ COLLECTIONS = {
             "doc_id": PayloadSchemaType.KEYWORD,
             "chunk_index": PayloadSchemaType.INTEGER,
             "candidate_name": PayloadSchemaType.KEYWORD,
-            "skills": PayloadSchemaType.LIST_KEYWORD,
+            "skills": PayloadSchemaType.KEYWORD,
             "experience_years": PayloadSchemaType.INTEGER,
             "location": PayloadSchemaType.KEYWORD,
             "client_id": PayloadSchemaType.KEYWORD,
@@ -53,7 +61,7 @@ COLLECTIONS = {
             "doc_id": PayloadSchemaType.KEYWORD,
             "chunk_index": PayloadSchemaType.INTEGER,
             "doc_type": PayloadSchemaType.KEYWORD,
-            "tags": PayloadSchemaType.LIST_KEYWORD,
+            "tags": PayloadSchemaType.KEYWORD,
             "client_id": PayloadSchemaType.KEYWORD,
         },
     },
