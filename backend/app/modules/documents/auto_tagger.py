@@ -3,12 +3,11 @@ import logging
 import uuid
 from typing import Optional
 
-import litellm
 from pydantic import BaseModel, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.llm import complete
 from app.modules.documents.models import Document
 
 logger = logging.getLogger(__name__)
@@ -55,8 +54,7 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
     prompt = AUTO_TAG_PROMPT.format(text=extracted_text[:10000])  # limit to 10k chars
 
     try:
-        response = await litellm.acompletion(
-            model="deepinfra/zai-org/GLM-5.2",
+        raw = await complete(
             messages=[
                 {
                     "role": "system",
@@ -65,14 +63,9 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
                 {"role": "user", "content": prompt},
             ],
             temperature=0.1,
-            # GLM-5.2 is a reasoning model - it spends tokens on hidden
-            # reasoning_content before the visible answer, so this needs
-            # real headroom, not just enough for the JSON itself.
             max_tokens=1024,
-            api_key=settings.deepinfra_api_key or None,
         )
-
-        raw = response.choices[0].message.content.strip()
+        raw = raw.strip()
         # Strip markdown code fences if present
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[-1]
