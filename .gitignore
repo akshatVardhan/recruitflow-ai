@@ -1,6 +1,15 @@
-# .opencode/ is tracked (MCP config + agent discovery for OpenCode runtime)
 # .claude/ is Claude Code-specific and not compatible with current tooling
 .claude/
+
+# Agent tooling/process docs - not secrets (no credentials live here, ever -
+# that's Doppler-only), just kept off the public repo. Lives in the private
+# companion repo recruitflow-ai-agents instead - run
+# scripts/sync-agent-files.sh to pull it into place (needed once per clone
+# and once per new worktree).
+.agents/
+.opencode/
+opencode.json
+AGENTS.md
 
 # Environment variables - never commit
 .env
