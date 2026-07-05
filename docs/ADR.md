@@ -111,6 +111,26 @@ API key env var changed from DEEPSEEK_API_KEY to ZAI_API_KEY.
 All existing DeepSeek-specific configuration fields retained in config.py for backward compatibility during transition.
 All LLM interactions continue to go through LiteLLM -- no provider SDK imported directly.
 
+Amendment (2026-07-05):
+GLM 5.2 is not accessed directly through Z.AI's own API in this project -
+access is through a third-party host, DeepInfra, which is also how the
+coding-agent tooling already routes GLM 5.2 (see ANTHROPIC_BASE_URL/
+ANTHROPIC_MODEL in Doppler). The original migration incorrectly assumed a
+direct Z.AI integration and configured the model string as "zai/glm-5.2"
+with a ZAI_API_KEY - litellm's "zai/" prefix targets Z.AI's own endpoint,
+which rejected the DeepInfra-issued key that had been placed in that slot
+(same value as DEEPINFRA_API_KEY, copied in by mistake during the original
+migration). This broke auto-tagging, document generation, and resume
+scoring end-to-end in every environment until fixed.
+Corrected model string: "deepinfra/zai-org/GLM-5.2" (matches the exact
+model slug already used for ANTHROPIC_MODEL).
+Corrected API key env var: DEEPINFRA_API_KEY (already existed in Doppler
+for the agent-tooling use case; the stray ZAI_API_KEY entry should be
+removed once nothing references it).
+GLM 5.2 is a reasoning model - it emits hidden reasoning_content before
+the visible answer, so max_tokens must budget for both, not just the
+visible output size.
+
 ---
 
 ## ADR-005 - MinIO for Local Storage, GCS for Production
