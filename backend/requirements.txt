@@ -28,4 +28,4 @@ llama-index-core==0.14.23
 ruff==0.6.4
 black==26.3.1
 mypy==1.11.2
-pip-audit==2.7.3
+pip-audit==2.10.1
