@@ -8,7 +8,11 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
-from app.modules.documents.auto_tagger import AUTO_TAG_PROMPT, AutoTags, auto_tag_document_text
+from app.modules.documents.auto_tagger import (
+    AUTO_TAG_PROMPT,
+    AutoTags,
+    auto_tag_document_text,
+)
 
 
 def _mock_llm_response(content: str):
