@@ -68,7 +68,7 @@ Completed by DevOps Engineer (Session: 20260703-DO-P010 and 20260703-DO-P012):
 
 #### Phase 1 - Cost Reduction (kept permanently)
 - **PR #20 closed** without merging -- its pull_request trigger approach superseded by properly scoped triggers
-- **keepwarm.yml deleted** -- redundant because Cloud Run min-instances=1 prevents cold starts natively
+- **keepwarm.yml still exists** (not yet deleted despite min-instances=1 making it redundant) -- decision on removal deferred to RF-61, do not modify outside that subtask
 - **backend.yml triggers scoped**: pull_request against staging + push to staging/main only (not every feature branch commit); pip caching added
 - **frontend.yml triggers scoped**: same pattern; npm caching added
 
