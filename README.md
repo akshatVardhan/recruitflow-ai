@@ -6,7 +6,7 @@ AI-powered recruitment platform for staffing and recruitment firms.
 
 - **Backend**: Python 3.13, FastAPI, SQLAlchemy (async), Celery, Argon2, JWT
 - **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, TanStack React Query
-- **Database**: PostgreSQL 16 (Cloud SQL), Redis, Qdrant (vector DB)
+- **Database**: PostgreSQL 15 (Cloud SQL), Redis, Qdrant (vector DB)
 - **File Storage**: MinIO (dev), GCP Cloud Storage (prod)
 - **LLM**: Z.AI GLM 5.2 via LiteLLM
 - **Infrastructure**: GCP Cloud Run (prod), Vercel (frontend)
