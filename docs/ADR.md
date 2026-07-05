@@ -111,6 +111,26 @@ API key env var changed from DEEPSEEK_API_KEY to ZAI_API_KEY.
 All existing DeepSeek-specific configuration fields retained in config.py for backward compatibility during transition.
 All LLM interactions continue to go through LiteLLM -- no provider SDK imported directly.
 
+Amendment (2026-07-05):
+GLM 5.2 is not accessed directly through Z.AI's own API in this project -
+access is through a third-party host, DeepInfra, which is also how the
+coding-agent tooling already routes GLM 5.2 (see ANTHROPIC_BASE_URL/
+ANTHROPIC_MODEL in Doppler). The original migration incorrectly assumed a
+direct Z.AI integration and configured the model string as "zai/glm-5.2"
+with a ZAI_API_KEY - litellm's "zai/" prefix targets Z.AI's own endpoint,
+which rejected the DeepInfra-issued key that had been placed in that slot
+(same value as DEEPINFRA_API_KEY, copied in by mistake during the original
+migration). This broke auto-tagging, document generation, and resume
+scoring end-to-end in every environment until fixed.
+Corrected model string: "deepinfra/zai-org/GLM-5.2" (matches the exact
+model slug already used for ANTHROPIC_MODEL).
+Corrected API key env var: DEEPINFRA_API_KEY (already existed in Doppler
+for the agent-tooling use case; the stray ZAI_API_KEY entry should be
+removed once nothing references it).
+GLM 5.2 is a reasoning model - it emits hidden reasoning_content before
+the visible answer, so max_tokens must budget for both, not just the
+visible output size.
+
 ---
 
 ## ADR-005 - MinIO for Local Storage, GCS for Production
@@ -134,3 +154,56 @@ Local: endpoint_url points to localhost:9000 (MinIO).
 Production: endpoint_url is None (boto3 defaults to AWS S3 format,
 overridden by GCS credentials via google-cloud-storage library or
 a GCS-compatible S3 endpoint).
+
+---
+
+## ADR-007 - Upstash for Redis, Qdrant Cloud for Qdrant (dev and prod, both environments)
+Date: 2026-07-06
+Status: Accepted
+Agent: Backend Dev / DevOps Eng
+
+Decision:
+Use Upstash (managed serverless Redis) for the Celery broker/result backend,
+and Qdrant Cloud's free tier (GCP-hosted, Frankfurt region) for the vector
+store, in both dev and prod. Neither is GCP-native.
+
+Reasoning:
+Redis in this project only serves as the Celery broker/result backend for
+async document ingestion (RF-25) - a background job queue, not a
+latency-sensitive request-path cache. GCP Memorystore for Redis was
+considered (available GCP credits, ~$300 expiring ~Sept 2026) but has no
+free tier and bills for provisioned capacity 24/7 regardless of usage
+(~$36/mo for the smallest 1GiB Basic tier) - the credits would only defer
+that cost by ~2 months, not eliminate it, and Memorystore's real value
+(private VPC networking, managed HA/failover) targets a problem this
+project doesn't have at its current scale. Upstash's free tier (500K
+commands/month) almost certainly covers this project's actual traffic
+(a solo recruiter's document uploads) at $0/month indefinitely.
+
+Qdrant is different: it sits on the live request path (hybrid_search/
+semantic_search are called synchronously during RAG retrieval), so network
+locality actually matters here. Qdrant Cloud's free tier was chosen over
+self-hosting on a GCP Compute Engine VM for zero ops overhead; the GCP
+provider option was picked within Qdrant Cloud (confirmed available on the
+free tier) for cloud locality, with Frankfurt chosen over the only
+Asia-Pacific option offered (Sydney) based on great-circle distance to
+Mumbai (~6,600km vs ~10,000km) and typical India-Europe submarine cable
+routing (SEA-ME-WE) - not measured with a live ping test, worth confirming
+if latency ever becomes a concern.
+
+Redis eviction is disabled on the Upstash instance: it's a message queue,
+and silent LRU eviction of an unprocessed task message means a document
+upload vanishes with zero trace. A loud out-of-memory error on a full
+queue is the safer failure mode than silent data loss.
+
+Consequences:
+REDIS_URL and QDRANT_URL/QDRANT_API_KEY wired into Doppler's dev config
+(prod not yet done - RF-54 scope). Both use TLS (rediss:// / https://).
+Discovered and fixed a real bug during validation: Celery's Redis result
+backend requires ssl_cert_reqs set explicitly for rediss:// URLs, which
+nothing in worker.py configured - see the fix commit on
+fix/celery-redis-ssl-backend (PR #50) for detail. Qdrant's 3 collections
+(resumes, job_descriptions, hr_documents) were recreated on the fresh
+cluster via the existing idempotent ensure_collections() in
+core/qdrant.py - no code changes needed there, just running it against
+the new instance.

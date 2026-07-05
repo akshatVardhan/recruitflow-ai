@@ -3,7 +3,7 @@
 Tools:
 - search_documents: hybrid search across all ingested documents
 - get_document_by_id: fetch a specific document by ID
-- generate_document: stream a new document via Z.AI GLM RAG
+- generate_document: stream a new document via GLM 5.2 (DeepInfra) RAG
 - score_resume: score a resume against a job description
 - list_candidates: list candidates matching filters
 """
@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
+from app.core.llm import complete
 from app.modules.documents.models import Document
 from app.modules.rag.retriever import hybrid_search, semantic_search
 
@@ -104,14 +105,14 @@ get_document_by_id_tool = FunctionTool.from_defaults(
 
 
 # ---------------------------------------------------------------------------
-# Tool 3: generate_document (streaming via Z.AI GLM)
+# Tool 3: generate_document (streaming via GLM 5.2 / DeepInfra)
 # ---------------------------------------------------------------------------
 
 
 async def generate_document_fn(
     doc_type: str, context: str, reference_ids: list[str] | None = None
 ) -> str:
-    """Generate a new document using Z.AI GLM 5.2 with RAG context.
+    """Generate a new document using GLM 5.2 (DeepInfra) with RAG context.
 
     Args:
         doc_type: The type of document to generate (resume, job_description, offer_letter, sop, etc.)
@@ -121,8 +122,6 @@ async def generate_document_fn(
     Returns:
         The generated document text
     """
-    import litellm
-
     reference_text = ""
     if reference_ids:
         async with async_session_factory() as db:
@@ -148,8 +147,7 @@ async def generate_document_fn(
     )
     user_prompt += "\n\nGenerate the complete document with proper formatting."
 
-    response = await litellm.acompletion(
-        model="zai/glm-5.2",
+    return await complete(
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -157,8 +155,6 @@ async def generate_document_fn(
         temperature=0.7,
         max_tokens=4096,
     )
-
-    return response.choices[0].message.content
 
 
 generate_document_tool = FunctionTool.from_defaults(
@@ -184,8 +180,6 @@ async def score_resume_fn(resume_id: str, jd_id: str) -> str:
     Returns:
         JSON string with scoring breakdown
     """
-    import litellm
-
     async with async_session_factory() as db:
         resume_result = await db.execute(
             select(Document).where(
@@ -209,8 +203,7 @@ async def score_resume_fn(resume_id: str, jd_id: str) -> str:
         f"Resume:\n{(resume.extracted_text or '')[:3000]}"
     )
 
-    response = await litellm.acompletion(
-        model="zai/glm-5.2",
+    return await complete(
         messages=[
             {
                 "role": "system",
@@ -221,8 +214,6 @@ async def score_resume_fn(resume_id: str, jd_id: str) -> str:
         temperature=0.1,
         max_tokens=1024,
     )
-
-    return response.choices[0].message.content
 
 
 score_resume_tool = FunctionTool.from_defaults(

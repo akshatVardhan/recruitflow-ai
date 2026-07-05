@@ -3,12 +3,11 @@ import logging
 import uuid
 from typing import Optional
 
-import litellm
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.llm import complete
 from app.modules.documents.models import Document
 
 logger = logging.getLogger(__name__)
@@ -37,9 +36,17 @@ class AutoTags(BaseModel):
     skills: list[str] = []
     date: Optional[str] = None
 
+    @field_validator("skills")
+    @classmethod
+    def cap_skills(cls, v: list[str]) -> list[str]:
+        # The prompt asks the model to cap this at 20, but a malicious or
+        # excessively long document can provoke a longer list anyway -
+        # enforce the cap in code instead of trusting the model.
+        return v[:20]
+
 
 async def auto_tag_document_text(extracted_text: str) -> dict:
-    """Call Z.AI GLM 5.2 via LiteLLM to extract structured metadata."""
+    """Call GLM 5.2 (via DeepInfra) through LiteLLM to extract structured metadata."""
     if not extracted_text or not extracted_text.strip():
         logger.warning("Empty text provided for auto-tagging")
         return AutoTags().model_dump()
@@ -47,8 +54,7 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
     prompt = AUTO_TAG_PROMPT.format(text=extracted_text[:10000])  # limit to 10k chars
 
     try:
-        response = await litellm.acompletion(
-            model="zai/glm-5.2",
+        raw = await complete(
             messages=[
                 {
                     "role": "system",
@@ -57,11 +63,9 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
                 {"role": "user", "content": prompt},
             ],
             temperature=0.1,
-            max_tokens=512,
-            api_key=settings.zai_api_key or None,
+            max_tokens=1024,
         )
-
-        raw = response.choices[0].message.content.strip()
+        raw = raw.strip()
         # Strip markdown code fences if present
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[-1]
