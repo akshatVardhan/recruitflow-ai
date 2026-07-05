@@ -1,4 +1,4 @@
-"""Tests for auto-tagging via Z.AI GLM 5.2."""
+"""Tests for auto-tagging via GLM 5.2 (DeepInfra)."""
 
 import json
 import uuid
