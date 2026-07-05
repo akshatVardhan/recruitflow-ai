@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "detect-secrets baseline stores SHA1 hashes of reviewed strings, not real secrets"
+paths = [
+  '''\.secrets\.baseline''',
+]
