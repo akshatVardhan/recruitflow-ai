@@ -1,8 +1,8 @@
 """
 One-off manual probe for RF-33 (prompt injection review of the auto-tagger).
-Not part of the pytest suite - calls the real Z.AI GLM 5.2 model live via Doppler
-env injection, since injection resistance is a property of the live model, not
-something a mock can prove. Run with:
+Not part of the pytest suite - calls the real GLM 5.2 model (via DeepInfra)
+live via Doppler env injection, since injection resistance is a property of
+the live model, not something a mock can prove. Run with:
 
     cd backend && doppler run -- python rf33_injection_probe.py
 
