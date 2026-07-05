@@ -4,7 +4,7 @@ import uuid
 from typing import Optional
 
 import litellm
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,6 +36,14 @@ class AutoTags(BaseModel):
     company: Optional[str] = None
     skills: list[str] = []
     date: Optional[str] = None
+
+    @field_validator("skills")
+    @classmethod
+    def cap_skills(cls, v: list[str]) -> list[str]:
+        # The prompt asks the model to cap this at 20, but a malicious or
+        # excessively long document can provoke a longer list anyway -
+        # enforce the cap in code instead of trusting the model.
+        return v[:20]
 
 
 async def auto_tag_document_text(extracted_text: str) -> dict:
