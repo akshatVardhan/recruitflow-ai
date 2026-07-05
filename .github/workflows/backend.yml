@@ -13,11 +13,9 @@ on:
     branches:
       - staging
       - main
-    paths:
-      - "backend/**"
 
 jobs:
-  lint-and-test:
+  backend-ci:
     runs-on: ubuntu-latest
     services:
       postgres:

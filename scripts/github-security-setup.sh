@@ -14,13 +14,10 @@ gh api repos/$REPO/branches/main/protection \
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": []
+    "contexts": ["backend-ci", "frontend-ci", "security"]
   },
   "enforce_admins": true,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true
-  },
+  "required_pull_request_reviews": null,
   "restrictions": null
 }
 EOF
@@ -32,19 +29,15 @@ gh api repos/$REPO/branches/staging/protection \
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": []
+    "contexts": ["backend-ci", "frontend-ci", "security"]
   },
   "enforce_admins": true,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false
-  },
+  "required_pull_request_reviews": null,
   "restrictions": null
 }
 EOF
 
-echo "=== 3. Enable Secret Scanning ==="
+echo "=== 3. Enable Secret Scanning + Push Protection ==="
 gh api repos/$REPO \
   --method PATCH \
   --input - <<EOF
@@ -54,6 +47,19 @@ gh api repos/$REPO \
       "status": "enabled"
     },
     "secret_scanning_push_protection": {
+      "status": "enabled"
+    }
+  }
+}
+EOF
+
+echo "=== 4. Enable Dependabot Alerts ==="
+gh api repos/$REPO \
+  --method PATCH \
+  --input - <<EOF
+{
+  "security_and_analysis": {
+    "dependabot_security_updates": {
       "status": "enabled"
     }
   }

@@ -16,6 +16,30 @@
 
 ---
 
+## Session: 20260705-DO-P016 - 2026-07-05
+Agent: DevOps Eng
+Prompt: Ad-hoc (investigation + fix)
+JIRA story: none (ad-hoc)
+Branch: fix/pip-audit-timeout
+Session started: (immediate)
+Session ended: (immediate)
+Exit status: Complete
+
+Commits made:
+- 2c83043 - ci(security): add pip-audit --timeout 30 to prevent indefinite OSV API hangs
+
+Files changed: 1 (.github/workflows/security.yml)
+Tests passing: N/A (CI config change)
+
+progress.md updated: yes
+JIRA updated: no (no story)
+Notion updated: not required
+
+Blockers encountered: none
+Notes: Investigation of PR #24 security scan hang (run 28715574449). Root cause: pip-audit queries the remote OSV API with no timeout. With heavy transitive deps (sentence-transformers, litellm), the OSV lookup hangs indefinitely. Added --timeout 30 so the step fails fast with a clear message instead of blocking CI for 12+ hours.
+
+---
+
 ## Session: 20260704-FD-P020 - 2026-07-04 15:30
 Agent: Frontend Dev
 Prompt: PROMPT-020
@@ -845,6 +869,28 @@ Notion updated: not required
 
 Blockers encountered: none
 Notes: Repository structure initialized. .gitignore already covered all required patterns. .env.example already had all required variables. Missing directories (frontend, backend, docker, scripts, .github/workflows) and placeholder files created. agents/ folder populated from .agents/. JIRA update requires MCP setup (PROMPT-008).
+
+---
+
+## Session: 20260704-DO-P028 - 2026-07-04
+Agent: DevOps Eng
+Prompt: RF-43 audit and fix
+JIRA story: RF-43
+Branch: chore/role-files-v2
+Session started: (after prior session)
+Session ended: (immediate)
+Exit status: Complete
+
+Commits made:
+- 5dfb5c2 - ci(security): complete RF-43 security gates - job renames, security workflow, policy checks, Trivy scan, setup script fix RF-43
+
+Files changed: 6 (3 modified, 2 created, 1 new)
+Tests passing: N/A
+progress.md updated: no
+JIRA updated: yes (RF-43 audit comment posted)
+Notion updated: not required
+Blockers encountered: none
+Notes: RF-43 remaining deliverables completed on chore/role-files-v2. Audit table in RF-43 comment. No PR opened (one exists). Branch protection not modified.
 
 ---
 

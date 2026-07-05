@@ -1,0 +1,43 @@
+name: Security
+
+on:
+  pull_request:
+    branches: [staging, main]
+  push:
+    branches: [staging, main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks (secret scan, full history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install scanners
+        run: pip install pip-audit bandit
+
+      # Install deps first (pip has built-in timeout/retry).
+      # Then audit installed packages (no dep resolution needed -- fast).
+      - name: Install project dependencies
+        run: pip install -r backend/requirements.txt
+      - name: pip-audit (blocking)
+        run: pip-audit
+
+      - name: Bandit static analysis (blocking, medium+ severity)
+        run: bandit -r backend/app -ll
+
+      - name: Policy checks (project invariants)
+        run: python scripts/policy_check.py

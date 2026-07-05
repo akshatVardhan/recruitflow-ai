@@ -25,9 +25,21 @@ jobs:
         run: |
           gcloud auth configure-docker asia-south1-docker.pkg.dev
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
           docker build -t asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} ./backend
+
+      - name: Trivy image scan (blocking on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Push Docker image
+        run: |
           docker push asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }}
 
       - name: Deploy to Cloud Run
