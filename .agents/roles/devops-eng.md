@@ -36,13 +36,13 @@ terminal.
   in docs/ADR.md and owner sign-off first.
 
 ## Sprint Archiving Duty
-Once per sprint: move any prompts.md entries newly marked Done into
-.agents/archive/prompts-archive.md; move any newly-completed phase's detail
-out of progress.md into .agents/archive/progress-archive.md; trim
-agent-run-log.md back down to the 5 most recent sessions, archiving the rest
-into .agents/archive/agent-run-log-archive.md. Pure relocation only - never
+Once per sprint: move any newly-completed phase's detail out of progress.md
+into .agents/archive/progress-archive.md; trim agent-run-log.md back down
+to the 5 most recent sessions, archiving the rest into
+.agents/archive/agent-run-log-archive.md. Pure relocation only - never
 summarize or drop content, and never edit the archive files' history once
-written.
+written. (prompts.md itself is retired as of 2026-07-06 - nothing to
+archive from it going forward.)
 
 ## Working Rules
 1. Scope discipline: exactly the subtask's acceptance criteria.

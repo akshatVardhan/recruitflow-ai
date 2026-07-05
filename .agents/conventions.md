@@ -31,7 +31,7 @@ This applies without exception to:
 - JIRA issue descriptions, comments, and summaries
 - Code comments and inline documentation
 - Git commit messages and PR descriptions
-- All agent files: progress.md, prompts.md, agent-run-log.md
+- All agent files: progress.md, agent-run-log.md
 - README files and all markdown documentation
 
 Use plain text, dashes, and standard punctuation instead.
@@ -200,20 +200,16 @@ progress.md updated: yes
 
 ---
 
-## prompts.md Reading Protocol
+## Task Assignment (prompts.md retired 2026-07-06)
 
-Every agent reads prompts.md at the start of each session.
-
-Steps:
-1. Find all prompts addressed to your agent role
-2. Find prompts with status "Pending" only
-3. Check "Depends on" field - do not start if dependency is not "Done"
-4. Start with the lowest prompt number that is Pending and unblocked
-5. Update status to "In Progress" before starting work
-6. Update status to "Done" after completing and updating all required files
-
-Do not work on prompts addressed to other agents.
-Do not skip prompts without updating their status.
+Tasks are given directly for each session, not discovered by reading a
+queue file. `.agents/prompts.md` used to be an async work queue that
+agents polled for pending work addressed to their role; that capability
+was retired since task specs were consistently handed to agents
+synchronously in practice, not autonomously pulled. See
+`.agents/archive/prompts-archive.md` for the historical record and format
+of how task specs used to be written, if useful as a reference when
+writing a new one.
 
 ---
 
@@ -331,7 +327,6 @@ Keep-warm: Not needed -- Cloud Run min-instances=1 prevents cold starts natively
 
 Only these files exist for state tracking, ever:
 - .agents/progress.md
-- .agents/prompts.md
 - .agents/agent-run-log.md
 
 Additionally, these three read-only historical archive files are permitted -- they hold relocated (not summarized) content from the files above and must never be read during normal sessions:
@@ -406,7 +401,7 @@ recruitflow-ai/
             architect.md
         conventions.md
         progress.md
-        prompts.md
+        prompts.md (retired, stub only)
         agent-run-log.md
     docs/
         ADR.md

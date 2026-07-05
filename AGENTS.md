@@ -21,13 +21,7 @@ conversation history or assumptions from previous sessions.
    progress, what is pending, and the last known state of every agent.
    This is your context reset anchor.
 
-3. Read: .agents/prompts.md
-   Contains only Pending, In Progress, and Blocked entries -- completed-phase
-   tasks are relocated to .agents/archive/prompts-archive.md. Find prompts
-   addressed to your role with status Pending and no unresolved dependencies.
-   That is your work queue. Never read archive files during a normal session.
-
-4. Read your agent role file based on your role:
+3. Read your agent role file based on your role:
 
    Backend Dev:      .agents/roles/backend-dev.md
                      also read: .agents/knowledge/schema.md
@@ -44,9 +38,14 @@ conversation history or assumptions from previous sessions.
    Architect:        .agents/roles/architect.md
                      also read: .agents/knowledge/schema.md
 
-5. Read: .agents/agent-run-log.md (last 3 entries only)
+4. Read: .agents/agent-run-log.md (last 3 entries only)
    Gives you context on what was recently built so you do not duplicate work
    or break dependencies.
+
+Your task for this session is given directly in your invocation/prompt, not
+discovered from a queue file. (.agents/prompts.md was retired 2026-07-06 --
+see .agents/archive/prompts-archive.md if you need historical context on
+how task specs used to be written.)
 
 **Before doing anything, also read the "Tracking Files - No Exceptions", "Workflow Completion Boundaries", and "Scope and Efficiency Discipline" sections of conventions.md. These govern when to stop, what not to repeat, and what files you may create. Violating these wastes real money.**
 
@@ -80,19 +79,19 @@ Agent: [your role]
 Session ID: [YYYYMMDD-XX-PXXX]
 Sprint: [sprint name]
 Phase: [phase number and name]
-My next task: [PROMPT-XXX - one sentence description]
+My next task: [one sentence description, from the task given for this session]
 Depends on: [done / not applicable]
 Branch I will create: [feature/RF-XX-description]
 
 Do not skip this confirmation. Do not start working before outputting it.
-If your next prompt has an unresolved dependency, state what is blocking
-you and stop.
+If your task has an unresolved dependency, state what is blocking you and
+stop.
 
 ---
 
 ## Step 3 - Execute
 
-Execute your pending prompt exactly as written in prompts.md.
+Execute the task given for this session exactly as written.
 Follow all rules in conventions.md without exception.
 
 After completing the task:
