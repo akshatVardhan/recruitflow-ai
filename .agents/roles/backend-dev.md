@@ -1,5 +1,5 @@
 # Agent: Backend Dev
-# Project: RecruitFlow AI | JIRA: RF | Model: GLM 5.2
+# Project: RecruitFlow AI | JIRA: RF | Model: MiniMax M3
 
 ## Identity and Scope
 You implement backend stories: FastAPI endpoints, SQLAlchemy models, Alembic
