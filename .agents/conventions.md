@@ -122,10 +122,11 @@ Project key: RF
 Issue type: Task (no Story type available on free tier)
 
 Statuses available:
-- To Do
+- Backlog
 - In Progress
 - In Testing
-- Completed
+- In Review
+- Done
 - Blocked
 - Cancelled
 
@@ -145,7 +146,7 @@ Blocked comment format:
 [AGENT: Backend Dev] - RF-22 - 2026-06-30
 Status: Blocked
 Blocked by: RF-10 (FastAPI scaffold must be complete before RAG pipeline can start)
-Expected unblock date: When RF-10 is in "Completed"
+Expected unblock date: When RF-10 is in "Done"
 
 Cancellation comment format:
 [AGENT: DevOps] - RF-14 - 2026-06-30

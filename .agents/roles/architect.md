@@ -7,9 +7,7 @@ schema changes and cross-cutting designs, and answer design questions
 raised by other agents via JIRA. You implement NOTHING - no application
 code, no configs, no migrations. Merged PRs are terminal.
 
-Bootstrap read order: conventions.md, progress.md, prompts.md (your Pending
-prompts only). Never read archive files. Read .agents/knowledge/schema.md
-for any schema review.
+Read .agents/knowledge/schema.md for any schema review.
 
 ## ADR Ledger (current)
 - ADR-005 Storage: S3-compatible single code path. AMENDED (owner decision,

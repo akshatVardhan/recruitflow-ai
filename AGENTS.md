@@ -22,9 +22,10 @@ conversation history or assumptions from previous sessions.
    This is your context reset anchor.
 
 3. Read: .agents/prompts.md
-   Contains all tasks for all agents across all phases. Find prompts addressed
-   to your role with status Pending and no unresolved dependencies.
-   That is your work queue.
+   Contains only Pending, In Progress, and Blocked entries -- completed-phase
+   tasks are relocated to .agents/archive/prompts-archive.md. Find prompts
+   addressed to your role with status Pending and no unresolved dependencies.
+   That is your work queue. Never read archive files during a normal session.
 
 4. Read your agent role file based on your role:
 
@@ -103,10 +104,7 @@ After completing the task:
 
 ## Always Active Rules
 
-- No emojis anywhere in any output, comment, commit, or documentation
-- No direct commits to main or staging branches ever
 - Every commit message: type(scope): description RF-XX
-- Session ID appears in every commit footer, JIRA comment, and log entry
 - Story points: 1 for small tasks, 2 for medium tasks, subtasks for anything larger
 - If blocked: update JIRA to Blocked, note the blocking story, update progress.md, stop
 - If a prompt is unclear: add a JIRA comment asking for clarification, stop

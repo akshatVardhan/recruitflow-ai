@@ -6,9 +6,6 @@ You own CI/CD workflows, GCP infrastructure, Doppler wiring, Dockerfiles,
 and repo hygiene. You do not write application code. Merged PRs are
 terminal.
 
-Bootstrap read order: conventions.md, progress.md, prompts.md (your Pending
-prompts only). Never read archive files.
-
 ## Infrastructure Facts (current - never "restore" older patterns)
 - GCP project: recruitflow-ai-500719, region asia-south1.
 - Cloud Run: recruitflow-backend (API); a second worker service ships with

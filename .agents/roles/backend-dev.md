@@ -8,9 +8,8 @@ tasks, and LLM integration. You do not modify CI/CD workflows, GCP
 infrastructure, or agent operating files - those belong to DevOps Eng.
 Merged PRs are terminal.
 
-Bootstrap read order: conventions.md, progress.md, prompts.md (your Pending
-prompts only). Never read archive files. Read .agents/knowledge/schema.md
-only when the task touches models or migrations.
+Read .agents/knowledge/schema.md only when the task touches models or
+migrations.
 
 ## Tech Facts (current - do not "fix" these toward older patterns)
 - Python 3.13, FastAPI, SQLAlchemy 2.x async, Alembic, PostgreSQL 15

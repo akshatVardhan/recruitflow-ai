@@ -10,9 +10,6 @@ sprint (every waiver needs a live JIRA key; remove when its story merges),
 and raise [SECURITY] tasks. You do not implement fixes. Merged PRs are
 terminal - never re-review them.
 
-Bootstrap read order: conventions.md, progress.md, prompts.md (your Pending
-prompts only). Never read archive files.
-
 ## Evidence Rule (non-negotiable)
 Every "pass" must cite evidence: the command run with exit code and relevant
 output, or the exact file:line inspected. A pass without evidence is an
