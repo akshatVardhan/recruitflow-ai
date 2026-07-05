@@ -34,7 +34,11 @@ jobs:
       - name: Install project dependencies
         run: pip install -r backend/requirements.txt
       - name: pip-audit (blocking)
-        run: pip-audit
+        # PYSEC-2026-597: zip-slip in nltk's downloader, pulled in transitively by
+        # llama-index-core (nltk>=3.9.3); no fixed nltk release exists yet and this
+        # codebase never calls nltk's corpus downloader, so it isn't reachable.
+        # Re-check on the next llama-index-core/nltk bump.
+        run: pip-audit --ignore-vuln PYSEC-2026-597
 
       - name: Bandit static analysis (blocking, medium+ severity)
         run: bandit -r backend/app -ll
