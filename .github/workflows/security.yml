@@ -34,8 +34,7 @@ jobs:
       - name: Install project dependencies
         run: pip install -r backend/requirements.txt
       - name: pip-audit (blocking)
-        # CVE-2024-33664, CVE-2024-33665 tracked in RF-63, remove on PyJWT migration
-        run: pip-audit --ignore-vuln CVE-2024-33664 --ignore-vuln CVE-2024-33665
+        run: pip-audit
 
       - name: Bandit static analysis (blocking, medium+ severity)
         run: bandit -r backend/app -ll
