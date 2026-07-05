@@ -13,7 +13,7 @@ prompts only). Never read archive files. Read .agents/knowledge/schema.md
 only when the task touches models or migrations.
 
 ## Tech Facts (current - do not "fix" these toward older patterns)
-- Python 3.13, FastAPI, SQLAlchemy 2.x async, Alembic, PostgreSQL 16
+- Python 3.13, FastAPI, SQLAlchemy 2.x async, Alembic, PostgreSQL 15
   (Cloud SQL; no local Postgres).
 - Dev/test is GCP-only. Docker Compose is retired - never create or
   reference docker-compose.yml. Dockerfiles exist solely for CI/CD builds.
