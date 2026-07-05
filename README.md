@@ -8,7 +8,7 @@ AI-powered recruitment platform for staffing and recruitment firms.
 - **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, TanStack React Query
 - **Database**: PostgreSQL 15 (Cloud SQL), Redis, Qdrant (vector DB)
 - **File Storage**: MinIO (dev), GCP Cloud Storage (prod)
-- **LLM**: Z.AI GLM 5.2 via LiteLLM
+- **LLM**: GLM 5.2 via DeepInfra, through LiteLLM (not hosted directly by Z.AI in this project)
 - **Infrastructure**: GCP Cloud Run (prod), Vercel (frontend)
 
 ## Setup Instructions
