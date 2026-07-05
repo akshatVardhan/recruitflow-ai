@@ -17,7 +17,7 @@ redis==5.1.1
 httpx==0.28.1
 pytest==9.0.3
 pytest-asyncio==1.4.0
-python-multipart==0.0.31
+python-multipart==0.0.32
 PyMuPDF==1.28.0
 python-docx==1.1.2
 qdrant-client==1.9.1
