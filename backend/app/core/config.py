@@ -32,7 +32,7 @@ class Settings(BaseSettings):
 
     next_public_api_base_url: str = "http://localhost:3000"
 
-    model_config = {"env_file": ".env", "extra": "ignore"}
+    model_config = {"extra": "ignore"}
 
 
 settings = Settings()
