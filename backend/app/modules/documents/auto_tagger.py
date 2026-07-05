@@ -47,7 +47,7 @@ class AutoTags(BaseModel):
 
 
 async def auto_tag_document_text(extracted_text: str) -> dict:
-    """Call Z.AI GLM 5.2 via LiteLLM to extract structured metadata."""
+    """Call GLM 5.2 (via DeepInfra) through LiteLLM to extract structured metadata."""
     if not extracted_text or not extracted_text.strip():
         logger.warning("Empty text provided for auto-tagging")
         return AutoTags().model_dump()
@@ -56,7 +56,7 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
 
     try:
         response = await litellm.acompletion(
-            model="zai/glm-5.2",
+            model="deepinfra/zai-org/GLM-5.2",
             messages=[
                 {
                     "role": "system",
@@ -65,8 +65,11 @@ async def auto_tag_document_text(extracted_text: str) -> dict:
                 {"role": "user", "content": prompt},
             ],
             temperature=0.1,
-            max_tokens=512,
-            api_key=settings.zai_api_key or None,
+            # GLM-5.2 is a reasoning model - it spends tokens on hidden
+            # reasoning_content before the visible answer, so this needs
+            # real headroom, not just enough for the JSON itself.
+            max_tokens=1024,
+            api_key=settings.deepinfra_api_key or None,
         )
 
         raw = response.choices[0].message.content.strip()
