@@ -1,10 +1,18 @@
 import asyncio
+from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
-from app.core.database import Base, engine, async_session_factory
+from app.core.database import engine, async_session_factory
+
+# Real migrations, not Base.metadata.create_all(): User/Client ORM models are
+# still empty stubs, so Document's FKs to users/clients can't be resolved from
+# Base.metadata alone. The migrations already define those tables for real.
+ALEMBIC_CFG = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
 
 
 @pytest.fixture(scope="session")
@@ -12,25 +20,19 @@ def anyio_backend():
     return "asyncio"
 
 
-async def _reset_tables(create: bool) -> None:
-    # dispose before/after so no pooled connection outlives the throwaway
-    # loop that asyncio.run() creates for this fixture (see setup_database).
-    await engine.dispose()
-    async with engine.begin() as conn:
-        await conn.run_sync(
-            Base.metadata.create_all if create else Base.metadata.drop_all
-        )
-    await engine.dispose()
-
-
 @pytest.fixture(autouse=True)
 def setup_database():
     # Plain (sync) fixture: pytest 9 removed support for sync tests depending
-    # on an async autouse fixture, so the async setup/teardown is driven via
-    # asyncio.run() instead of `async def` + yield.
-    asyncio.run(_reset_tables(create=True))
+    # on an async autouse fixture. alembic's command.upgrade/downgrade are sync
+    # APIs (they drive their own asyncio.run() internally via env.py), so no
+    # asyncio.run() wrapper is needed here for the schema step itself.
+    # Dispose the app's engine around each test so no pooled connection from
+    # one test's event loop is reused by the next test's (different) loop.
+    asyncio.run(engine.dispose())
+    command.upgrade(ALEMBIC_CFG, "head")
     yield
-    asyncio.run(_reset_tables(create=False))
+    command.downgrade(ALEMBIC_CFG, "base")
+    asyncio.run(engine.dispose())
 
 
 @pytest.fixture
