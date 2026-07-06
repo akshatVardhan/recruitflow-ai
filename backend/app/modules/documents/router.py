@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.modules.auth.models import User
+from app.modules.auth.service import get_current_user
 from app.modules.documents.auto_tagger import tag_document
 from app.modules.documents.chunker import chunk_document
 from app.modules.documents.extractor import extract_document_text
@@ -52,12 +54,12 @@ async def upload_document(
     doc_type: DocType = Form(...),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    user_id = uuid.uuid4()  # placeholder until auth is implemented
     document = await create_document(
         db=db,
         client_id=client_id,
-        user_id=user_id,
+        user_id=current_user.id,
         title=title,
         doc_type=doc_type,
         file=file,

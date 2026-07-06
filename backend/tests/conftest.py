@@ -9,9 +9,10 @@ from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.core.database import engine, async_session_factory
 
-# Real migrations, not Base.metadata.create_all(): User/Client ORM models are
-# still empty stubs, so Document's FKs to users/clients can't be resolved from
-# Base.metadata alone. The migrations already define those tables for real.
+# Real migrations, not Base.metadata.create_all(): Client ORM model is still
+# an empty stub (User now exists, see auth/models.py), so Document's FK to
+# clients can't be resolved from Base.metadata alone. The migrations already
+# define that table for real.
 ALEMBIC_CFG = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
 
 
