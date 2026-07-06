@@ -30,7 +30,13 @@ jobs:
           docker build -t asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} ./backend
 
       - name: Trivy image scan (blocking on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.28.0
+        # Pinned to v0.35.0's commit SHA, not a mutable tag: the trivy-action
+        # supply-chain attack (GHSA-69fq-xp46-6x23) hijacked 76 of 77 version
+        # tags, including the old 0.28.0 this was pinned to, which is why it
+        # stopped resolving. v0.35.0 predates the attack and is protected by
+        # GitHub's immutable-releases feature; SHA-pinning per the advisory's
+        # own recommendation.
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }}
           format: table
