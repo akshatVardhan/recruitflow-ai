@@ -2,6 +2,9 @@ import axios from "axios"
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000",
+  // The refresh token lives in an httpOnly cookie, never in JS-visible
+  // storage - every request needs to send/receive cookies for that to work.
+  withCredentials: true,
 })
 
 let accessToken: string | null = null

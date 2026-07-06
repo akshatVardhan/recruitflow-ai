@@ -90,7 +90,7 @@ export function UploadMetadataRow({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor={`items.${index}.title`}>Title</Label>
           <Input
@@ -123,16 +123,6 @@ export function UploadMetadataRow({
                 ))}
               </Select>
             )}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor={`items.${index}.client_id`}>Client ID</Label>
-          <Input
-            id={`items.${index}.client_id`}
-            disabled={disabled || status === "uploading"}
-            {...register(`items.${index}.client_id` as const)}
-            data-testid={`row-clientid-${index}`}
           />
         </div>
       </div>

@@ -16,6 +16,9 @@ from app.modules.auth.schemas import UserRegister
 _pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 _bearer_scheme = HTTPBearer()
 
+REFRESH_COOKIE_NAME = "refresh_token"
+REFRESH_COOKIE_PATH = "/api/v1/auth"
+
 
 def hash_password(password: str) -> str:
     return _pwd_context.hash(password)
