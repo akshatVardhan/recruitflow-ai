@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from pathlib import Path
 
 import pytest
@@ -47,3 +48,18 @@ async def client():
 async def db_session():
     async with async_session_factory() as session:
         yield session
+
+
+@pytest.fixture
+async def auth_headers(client):
+    """Register + log in a throwaway user, return a bearer auth header."""
+    email = f"{uuid.uuid4()}@example.com"
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "full_name": "Test User", "password": "testpass123"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "testpass123"}
+    )
+    token = login.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

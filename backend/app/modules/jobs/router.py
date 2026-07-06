@@ -1,8 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.modules.auth.models import User
+from app.modules.auth.service import get_current_user
 
 router = APIRouter()
 
 
 @router.get("/")
-async def list_jobs():
+async def list_jobs(current_user: User = Depends(get_current_user)):
     return {"message": "Jobs list endpoint"}
