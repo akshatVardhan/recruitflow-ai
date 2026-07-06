@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/hooks/use-toast"
 import { uploadDocument } from "@/lib/api/documents"
+import { createClient, listClients } from "@/lib/api/clients"
 import { zodResolver } from "@/lib/zod-resolver"
+import type { Client } from "@/types/api"
+import { ClientSelector } from "./components/client-selector"
 import { FileDropzone } from "./components/file-dropzone"
 import { UploadMetadataRow } from "./components/upload-metadata"
 import { QueueEmptyState } from "./components/empty-state"
@@ -72,19 +75,66 @@ export default function DocStudioPage() {
   const [status, setStatus] = React.useState<Record<string, UploadStatus>>({})
   const [submitting, setSubmitting] = React.useState(false)
 
+  const [clients, setClients] = React.useState<Client[]>([])
+  const [clientsLoading, setClientsLoading] = React.useState(true)
+  const [creatingClient, setCreatingClient] = React.useState(false)
+  const [selectedClientId, setSelectedClientId] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    let cancelled = false
+    listClients()
+      .then((data) => {
+        if (cancelled) return
+        setClients(data)
+        if (data.length > 0) setSelectedClientId(data[0].id)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast({
+            variant: "destructive",
+            title: "Could not load clients",
+            description: "Check that you're signed in and try again.",
+          })
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setClientsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handleCreateClient = React.useCallback(async (name: string) => {
+    setCreatingClient(true)
+    try {
+      const client = await createClient({ name })
+      setClients((prev) => [...prev, client])
+      setSelectedClientId(client.id)
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Could not create client",
+        description: "Please try again.",
+      })
+    } finally {
+      setCreatingClient(false)
+    }
+  }, [])
+
   const handleFilesSelected = React.useCallback(
     (files: File[]) => {
-      if (files.length === 0) return
+      if (files.length === 0 || !selectedClientId) return
       append(
         files.map((file) => ({
           title: stripExtension(file.name),
           doc_type: "other" as const,
-          client_id: "default",
+          client_id: selectedClientId,
           file,
         }))
       )
     },
-    [append]
+    [append, selectedClientId]
   )
 
   const handleRemove = React.useCallback(
@@ -189,10 +239,19 @@ export default function DocStudioPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <ClientSelector
+            clients={clients}
+            loading={clientsLoading}
+            selectedId={selectedClientId}
+            onSelect={setSelectedClientId}
+            onCreate={handleCreateClient}
+            creating={creatingClient}
+          />
+
           <FileDropzone
             onFilesSelected={handleFilesSelected}
             currentCount={queueCount}
-            disabled={submitting || inProgress}
+            disabled={submitting || inProgress || !selectedClientId}
           />
 
           {queueCount === 0 ? (

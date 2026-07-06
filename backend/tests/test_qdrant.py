@@ -7,7 +7,7 @@ from app.main import app
 
 
 @pytest.mark.anyio
-async def test_list_collections_endpoint():
+async def test_list_collections_endpoint(auth_headers):
     """The collections endpoint should return a dict with collection statuses."""
     # No Qdrant server is available in the test environment (unlike Postgres,
     # there's no Qdrant service container in CI), so mock the client the same
@@ -19,7 +19,7 @@ async def test_list_collections_endpoint():
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.get("/api/v1/rag/collections")
+            response = await client.get("/api/v1/rag/collections", headers=auth_headers)
             assert response.status_code == 200
             data = response.json()
             assert "collections" in data

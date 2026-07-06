@@ -15,10 +15,31 @@ export interface LoginRequest {
   password: string
 }
 
+export interface RegisterRequest {
+  email: string
+  full_name: string
+  password: string
+}
+
 export interface LoginResponse {
+  // The refresh token is never in the body - it's set as an httpOnly
+  // cookie by the backend, invisible to JS.
   access_token: string
-  refresh_token: string
+  token_type: string
   user: User
+}
+
+export interface Client {
+  id: string
+  name: string
+  industry: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface ClientCreate {
+  name: string
+  industry?: string
 }
 
 export type DocType =
