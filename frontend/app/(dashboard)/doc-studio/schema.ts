@@ -6,10 +6,9 @@ export const docTypeValues = DOC_TYPE_VALUES.map((d) => d.value) as [DocType, ..
 export const metadataItemSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or fewer"),
   doc_type: z.enum(docTypeValues),
-  client_id: z
-    .string()
-    .min(1, "Client ID is required")
-    .max(100, "Client ID must be 100 characters or fewer"),
+  // Set programmatically from the selected client (see ClientSelector), not
+  // user-edited - the backend requires a real client UUID (RF-CONTRACT-1).
+  client_id: z.string().uuid("A client must be selected"),
   // File travels with each metadata row so it survives reorders / removes.
   // Not part of the validation contract.
   file: z.custom<File>().optional(),

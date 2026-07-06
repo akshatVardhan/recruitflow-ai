@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 60
     jwt_refresh_token_expire_days: int = 7
 
+    # Dev/CI runs the frontend and backend over plain http on the same host
+    # (different ports only), so the refresh cookie can use SameSite=Lax
+    # without Secure. Production serves them from different domains
+    # (Vercel + Cloud Run), which requires SameSite=None + Secure for the
+    # browser to send the cookie cross-site at all. Set to true via Doppler
+    # in the real production config.
+    is_production: bool = False
+
     sentry_dsn_backend: str = ""
 
     deepinfra_api_key: str = ""

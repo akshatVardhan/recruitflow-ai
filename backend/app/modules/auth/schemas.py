@@ -24,13 +24,12 @@ class UserResponse(BaseModel):
 
 
 class TokenResponse(BaseModel):
+    # The refresh token itself never appears in a JSON body - it's set as an
+    # httpOnly cookie so JS can't read it (frontend/lib/api.ts's interceptor
+    # already assumed this cookie-based flow before the backend existed).
     access_token: str
-    refresh_token: str
     token_type: str = "bearer"
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str
+    user: UserResponse
 
 
 class AccessTokenResponse(BaseModel):

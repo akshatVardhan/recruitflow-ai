@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.modules.auth.router import router as auth_router
+from app.modules.clients.router import router as clients_router
 from app.modules.recruiter.router import router as recruiter_router
 from app.modules.candidate.router import router as candidate_router
 from app.modules.documents.router import router as documents_router
@@ -11,6 +12,7 @@ from app.modules.chat.router import router as chat_router
 api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
+api_router.include_router(clients_router, prefix="/clients", tags=["clients"])
 api_router.include_router(recruiter_router, prefix="/recruiters", tags=["recruiters"])
 api_router.include_router(candidate_router, prefix="/candidates", tags=["candidates"])
 api_router.include_router(documents_router, prefix="/documents", tags=["documents"])
