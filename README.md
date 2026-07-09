@@ -68,7 +68,7 @@ companion repo) for day-to-day tracking.
 | **Job Finder** (`jobs`) | Match open roles to candidates, generate platform-optimized job postings (LinkedIn, WorkIndia, JobHai) | Planned |
 | **AI Chat Interface** (`chat`) | Conversational interface over the firm's own documents (RAG) for ad-hoc Q&A and drafting | Planned |
 | **Analytics** (`analytics`) | Pipeline and usage reporting across clients | Planned |
-| **Auth** (`auth`) | JWT-based authentication, Argon2 password hashing, per-client data isolation | Foundation complete |
+| **Auth** (`auth`, `clients`) | JWT-based authentication with login/register UI, Argon2 password hashing, per-client data isolation via a dedicated clients module | Foundation complete |
 
 Every RAG search and AI action is scoped to a `client_id`, so a single
 deployment can serve multiple staffing firms without their data mixing.
@@ -172,7 +172,7 @@ recruitflow-ai/
         hooks/, lib/, types/
     backend/                # FastAPI modular monolith
         app/
-            modules/        #   auth, recruiter, candidate, documents, jobs, rag, chat, analytics
+            modules/        #   auth, clients, recruiter, candidate, documents, jobs, rag, chat, analytics
             core/            #   config, db, storage, qdrant, embeddings, llm
             api/
         alembic/             # database migrations
