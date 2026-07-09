@@ -17,6 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Free runner disk space
+        # ubuntu-latest ships ~30GB of preinstalled toolchains this project
+        # never uses (Android SDK, .NET, Haskell, a CodeQL cache). Without
+        # this, the backend image build + Trivy's scan together exceeded
+        # the runner's free disk space and failed with "no space left on
+        # device" before the image was ever pushed or deployed.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          docker image prune -af
+
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
