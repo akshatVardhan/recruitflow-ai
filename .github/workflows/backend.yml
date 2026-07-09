@@ -66,7 +66,13 @@ jobs:
         # llama-index-core (nltk>=3.9.3); no fixed nltk release exists yet and this
         # codebase never calls nltk's corpus downloader, so it isn't reachable.
         # Re-check on the next llama-index-core/nltk bump.
-        run: pip-audit --ignore-vuln PYSEC-2026-597
+        # PYSEC-2026-1325 (CVE-2024-23342): Minerva timing side-channel on ECDSA
+        # P-256 signing/keygen in ecdsa, pulled in transitively by python-jose;
+        # the project has no planned fix (side channels are out of scope for
+        # python-ecdsa). This codebase signs JWTs with HS256 (config.py's
+        # jwt_algorithm default), never ECDSA, so the vulnerable path is
+        # unreachable. Re-check if JWT_ALGORITHM ever changes to an ES* value.
+        run: pip-audit --ignore-vuln PYSEC-2026-597 --ignore-vuln PYSEC-2026-1325
 
       - name: Run tests
         run: cd backend && pytest tests/ -v
