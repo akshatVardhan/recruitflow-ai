@@ -67,7 +67,7 @@ jobs:
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
         run: |
-          curl -Ls https://cli.doppler.com/install.sh | sh
+          curl -Ls https://cli.doppler.com/install.sh | sudo sh
           # env-vars-file (YAML) sidesteps gcloud's --set-env-vars comma-splitting,
           # which breaks on values like the JSON GCS credentials.
           doppler secrets download --project recruitflow-ai --config prd --format json --no-file \
