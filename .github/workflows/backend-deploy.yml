@@ -48,12 +48,24 @@ jobs:
         run: |
           docker push asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }}
 
+      - name: Fetch prod secrets from Doppler
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          curl -Ls https://cli.doppler.com/install.sh | sh
+          # env-vars-file (YAML) sidesteps gcloud's --set-env-vars comma-splitting,
+          # which breaks on values like the JSON GCS credentials.
+          doppler secrets download --project recruitflow-ai --config prd --format json --no-file \
+            | python3 -c "import json, sys; data = json.load(sys.stdin); open('/tmp/prod-env-vars.yaml', 'w').writelines(f'{k}: {json.dumps(str(v))}\n' for k, v in data.items() if not k.startswith('DOPPLER_'))"
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy recruitflow-backend \
             --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
             --region=asia-south1 \
-            --project=recruitflow-ai-500719
+            --project=recruitflow-ai-500719 \
+            --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
+            --env-vars-file=/tmp/prod-env-vars.yaml
 
       - name: Run migrations
         run: |
@@ -61,6 +73,7 @@ jobs:
             --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
             --region=asia-south1 \
             --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
+            --env-vars-file=/tmp/prod-env-vars.yaml \
             --command="alembic" \
             --args="upgrade,head" \
             --execute-now \
