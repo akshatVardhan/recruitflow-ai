@@ -67,9 +67,7 @@ async def create_refresh_token(db: AsyncSession, user_id: uuid.UUID) -> str:
     # jti guarantees uniqueness even if two logins for the same user land in
     # the same iat second, which would otherwise sign byte-identical tokens
     # (HS256 is deterministic) and collide on token_hash.
-    token = _create_token(
-        user_id, expires_delta, "refresh", now=now, jti=uuid.uuid4()
-    )
+    token = _create_token(user_id, expires_delta, "refresh", now=now, jti=uuid.uuid4())
     db.add(
         RefreshToken(
             user_id=user_id,
