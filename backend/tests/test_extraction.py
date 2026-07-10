@@ -68,9 +68,11 @@ def test_extract_text_from_docx_empty():
 
 
 @pytest.mark.anyio
-async def test_extract_nonexistent_document_returns_404():
-    """Extracting a nonexistent document should return 404."""
+async def test_extract_nonexistent_document_returns_404(auth_headers):
+    """Extracting a nonexistent document should return 404 (RF-78: needs auth now)."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post(f"/api/v1/documents/{uuid.uuid4()}/extract")
+        response = await client.post(
+            f"/api/v1/documents/{uuid.uuid4()}/extract", headers=auth_headers
+        )
         assert response.status_code == 404
