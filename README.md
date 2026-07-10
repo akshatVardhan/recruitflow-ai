@@ -188,6 +188,15 @@ live in a private companion repo and are pulled in locally via
 `scripts/sync-agent-files.sh` - they're internal process docs, not part of
 the shipped product.
 
+**Run `scripts/sync-agent-files.sh` immediately after creating any new
+`git worktree`, before launching an agent in it.** These 4 paths are
+gitignored, so a fresh worktree has none of them - no `AGENTS.md` for an
+agent to even know to read, no `opencode.json` defining agent roles at
+all. This file is the one guaranteed-present bootstrap pointer (it's the
+only one of these instructions that isn't itself inside a gitignored
+path), since `.agents/conventions.md`'s own copy of this same instruction
+is unreachable until after you've already run the sync it's describing.
+
 ## Documentation
 
 - [`docs/ADR.md`](docs/ADR.md) - architectural decisions and the reasoning behind them
