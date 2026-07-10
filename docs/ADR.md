@@ -155,6 +155,37 @@ Production: endpoint_url is None (boto3 defaults to AWS S3 format,
 overridden by GCS credentials via google-cloud-storage library or
 a GCS-compatible S3 endpoint).
 
+Amendment (2026-07-10):
+The original implementation pointed boto3 at
+https://storage.googleapis.com with aws_access_key_id hardcoded to "_"
+and aws_secret_access_key set to a GCS service-account JSON blob
+(gcs_credentials_json). This is the wrong credential type for that slot
+- boto3's aws_secret_access_key expects an HMAC secret key, not a JSON
+document - so every real upload/download/delete against GCS failed at
+the storage layer in every environment (RF-56).
+
+Fixed via a real GCS HMAC key pair (Option A: keep the single boto3
+S3-compatible client for both MinIO and GCS, no second code path). The
+existing recruitflow-agents service account (already granted
+roles/storage.objectAdmin) was reused via `gcloud storage hmac create`.
+Corrected config: gcs_hmac_access_key and gcs_hmac_secret_key
+(config.py Settings), replacing gcs_credentials_json entirely.
+core/storage.py now passes these as aws_access_key_id /
+aws_secret_access_key instead of the hardcoded "_" and the JSON blob.
+GOOGLE_APPLICATION_CREDENTIALS_JSON (a separate, unrelated
+service-account key that was never referenced anywhere in the app or
+CI/CD - the deploy pipeline authenticates via keyless Workload Identity
+Federation) was found alongside this work and is unrelated to storage
+auth; it's tracked separately.
+
+Key rotation policy: HMAC keys do not expire automatically. Rotate
+quarterly (owner duty) - create a new key pair via `gcloud storage hmac
+create`, update GCS_HMAC_ACCESS_KEY/GCS_HMAC_SECRET_KEY in Doppler
+(dev and prd), confirm the new key works, then deactivate and delete
+the old key via `gcloud storage hmac update ACCESS_ID --deactivate`
+followed by `gcloud storage hmac delete ACCESS_ID`. Never delete the
+old key before the new one is confirmed working end-to-end.
+
 ---
 
 ## ADR-007 - Upstash for Redis, Qdrant Cloud for Qdrant (dev and prod, both environments)
