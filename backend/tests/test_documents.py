@@ -179,7 +179,9 @@ async def test_get_document_rejects_other_users_document():
             headers=owner_headers,
         )
         if upload.status_code != 201:
-            pytest.skip("upload did not succeed in this environment (DB/MinIO), nothing to check ownership against")
+            pytest.skip(
+                "upload did not succeed in this environment (DB/MinIO), nothing to check ownership against"
+            )
         document_id = upload.json()["id"]
 
         attacker_headers = await _auth_headers(client)
