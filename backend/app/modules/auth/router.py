@@ -17,9 +17,10 @@ from app.modules.auth.service import (
     authenticate_user,
     create_access_token,
     create_refresh_token,
-    decode_token,
     get_current_user,
     register_user,
+    revoke_refresh_token,
+    rotate_refresh_token,
 )
 
 router = APIRouter()
@@ -49,7 +50,7 @@ async def login(
     data: UserLogin, response: Response, db: AsyncSession = Depends(get_db)
 ):
     user = await authenticate_user(db, data.email, data.password)
-    _set_refresh_cookie(response, create_refresh_token(user.id))
+    _set_refresh_cookie(response, await create_refresh_token(db, user.id))
     return TokenResponse(
         access_token=create_access_token(user.id),
         user=UserResponse.model_validate(user),
@@ -57,20 +58,27 @@ async def login(
 
 
 @router.post("/refresh", response_model=AccessTokenResponse)
-async def refresh(request: Request, response: Response):
+async def refresh(
+    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+):
     refresh_token = request.cookies.get(REFRESH_COOKIE_NAME)
     if refresh_token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="No refresh token cookie"
         )
-    user_id = decode_token(refresh_token, expected_type="refresh")
-    # Rotate: issue a fresh refresh token alongside the new access token.
-    _set_refresh_cookie(response, create_refresh_token(user_id))
+    # Rotate: the presented token is revoked in the DB and a fresh one issued.
+    user_id, new_refresh_token = await rotate_refresh_token(db, refresh_token)
+    _set_refresh_cookie(response, new_refresh_token)
     return AccessTokenResponse(access_token=create_access_token(user_id))
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(
+    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+):
+    refresh_token = request.cookies.get(REFRESH_COOKIE_NAME)
+    if refresh_token is not None:
+        await revoke_refresh_token(db, refresh_token)
     response.delete_cookie(REFRESH_COOKIE_NAME, path=REFRESH_COOKIE_PATH)
     return {"message": "Logged out"}
 
