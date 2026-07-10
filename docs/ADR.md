@@ -446,3 +446,55 @@ the resulting schema is wrong in a way alembic couldn't catch):
 3. In both cases, a fixed job name (recruitflow-migrate) and fixed
    service names mean no lookup is needed - the names above are the
    only ones that exist in this project.
+
+---
+
+## ADR-012 - Keyless Workload Identity Federation for GitHub Actions -> GCP Auth
+Date: 2026-07-09 (retroactive - written after RF-54's fix already shipped)
+Status: Accepted
+Agent: DevOps Eng (Claude Code), documenting a decision made during RF-54
+
+Decision:
+`backend-deploy.yml` authenticates to GCP via `google-github-actions/auth@v2`
+using Workload Identity Federation (WIF) - a workload identity pool +
+GitHub OIDC provider scoped to this exact repo, with the IAM binding on
+`recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com`
+further restricted to `refs/heads/main` only (the provider's own
+attribute-condition). No static GCP credential (service-account key
+JSON) exists anywhere in this repo, its secrets, or Doppler.
+
+Reasoning:
+Not a preference between two working options - a static SA key was not
+available at all. Every push-to-main deploy had been silently failing
+at the auth step since 2026-07-03 (`GCP_SERVICE_ACCOUNT_KEY` never
+existed as a repo secret). Attempting to generate a new key for either
+`recruitflow-agents` or the project's default compute SA was rejected
+by GCP itself: this project enforces
+`constraints/iam.disableServiceAccountKeyCreation` as an org policy,
+project-wide, tested against both service accounts. WIF was therefore
+the only viable path, not a hardening choice made among alternatives -
+though it's also the objectively safer one: no long-lived secret to
+leak, rotate, or scope-creep, and the `refs/heads/main`
+attribute-condition means even a compromised workflow file on another
+branch can't mint a token this identity would accept.
+
+Consequences:
+`backend-deploy.yml`'s "Authenticate to GCP" step passes
+`workload_identity_provider:
+projects/424745949201/locations/global/workloadIdentityPools/github-actions/providers/github`
+and `service_account:
+recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com` -
+these two values are the actual identity of this setup; if the pool,
+provider, or service account is ever recreated, both need to change
+together, in this file, or the deploy pipeline's auth step fails
+closed with no fallback (there is no key to fall back to on purpose).
+Any *future* CI/CD job needing GCP access in this project should use
+WIF the same way, not attempt an SA key - the org policy blocks it
+project-wide, not just for this one service account. Discovered as
+one of a 7-bug chain the first time the full deploy pipeline was
+actually run end-to-end (see `progress.md`'s "Main Branch State" /
+RF-54 entry in the agents-repo for the other 6: `workflow_dispatch`
+trigger, runner disk space, Doppler installer sudo, Cloud Run
+self-actAs IAM grant, 2GiB memory bump, migration job service account -
+those are operational fixes, not architectural decisions, so they
+don't get their own ADR entries).
