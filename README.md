@@ -183,19 +183,22 @@ recruitflow-ai/
     .env.example             # documents variable names only - not used to run the app
 ```
 
-Agent operating files (`.agents/`, `AGENTS.md`, `.opencode/`, `opencode.json`)
-live in a private companion repo and are pulled in locally via
-`scripts/sync-agent-files.sh` - they're internal process docs, not part of
-the shipped product.
+Agent operating files (`.agents/`, `AGENTS.md`) live in a private companion
+repo and are pulled in locally via `scripts/sync-agent-files.sh` - they're
+internal process docs, not part of the shipped product. All agent roles run
+as plain Claude Code sessions (OpenCode retired 2026-07-11); there is no
+separate tool config to sync alongside these two paths.
 
 **Run `scripts/sync-agent-files.sh` immediately after creating any new
-`git worktree`, before launching an agent in it.** These 4 paths are
+`git worktree`, before launching an agent in it.** These 2 paths are
 gitignored, so a fresh worktree has none of them - no `AGENTS.md` for an
-agent to even know to read, no `opencode.json` defining agent roles at
-all. This file is the one guaranteed-present bootstrap pointer (it's the
-only one of these instructions that isn't itself inside a gitignored
-path), since `.agents/conventions.md`'s own copy of this same instruction
-is unreachable until after you've already run the sync it's describing.
+agent to even know to read. This file is the one guaranteed-present
+bootstrap pointer (it's the only one of these instructions that isn't
+itself inside a gitignored path), since `.agents/conventions.md`'s own copy
+of this same instruction is unreachable until after you've already run the
+sync it's describing. Also re-run this after any PR merges on
+recruitflow-ai-agents - the sync is one-directional and won't happen on its
+own, so an existing worktree keeps reading a stale snapshot until you do.
 
 ## Documentation
 
