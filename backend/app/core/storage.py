@@ -16,8 +16,8 @@ def get_storage_client():
             "s3",
             region_name="auto",
             endpoint_url="https://storage.googleapis.com",
-            aws_access_key_id="_",
-            aws_secret_access_key=settings.gcs_credentials_json,
+            aws_access_key_id=settings.gcs_hmac_access_key,
+            aws_secret_access_key=settings.gcs_hmac_secret_key,
             config=Config(signature_version="s3v4"),
         )
     else:
