@@ -31,6 +31,11 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.0"
   },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.10"
+    }
+  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.0",
