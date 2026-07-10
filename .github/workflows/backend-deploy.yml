@@ -73,6 +73,48 @@ jobs:
           doppler secrets download --project recruitflow-ai --config prd --format json --no-file \
             | python3 -c "import json, sys; data = json.load(sys.stdin); open('/tmp/prod-env-vars.yaml', 'w').writelines(f'{k}: {json.dumps(str(v))}\n' for k, v in data.items() if not k.startswith('DOPPLER_'))"
 
+      - name: Run migrations
+        # RF-73: single persistent job (recruitflow-migrate), not one named
+        # per-SHA. A bare-SHA job name collided ("already exists") whenever
+        # the same commit's deploy was re-triggered - concurrent worktree
+        # sessions or a manual retry both land on the same SHA. Updating a
+        # fixed job name and re-executing it means retries/concurrent runs
+        # just race harmlessly to the same job instead of colliding.
+        # --service-account: on first-ever creation the job has no existing
+        # revision to inherit a runtime identity from (unlike the deploy
+        # step below), so it defaults to the project's default compute
+        # SA - which recruitflow-agents has no actAs permission on.
+        # Pointing it at recruitflow-agents explicitly reuses the
+        # self-actAs grant already set up for the deploy step instead of
+        # granting broader access on the default compute SA.
+        #
+        # Runs BEFORE both service deploys below (RF-73): if the migration
+        # fails, this step's non-zero exit fails the job and GitHub Actions'
+        # default fail-fast behavior skips every remaining step, so neither
+        # service ever deploys the new revision - no separate abort logic
+        # needed. --wait (not --execute-now) is required for that to work:
+        # --execute-now alone returns success as soon as the execution
+        # *starts*, regardless of whether the container inside it later
+        # exits non-zero. --wait blocks until the execution finishes and
+        # implies --execute-now, so gcloud's own exit code reflects the
+        # migration container's real result.
+        run: |
+          if gcloud run jobs describe recruitflow-migrate --region=asia-south1 --project=recruitflow-ai-500719 >/dev/null 2>&1; then
+            ACTION=update
+          else
+            ACTION=create
+          fi
+          gcloud run jobs $ACTION recruitflow-migrate \
+            --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
+            --region=asia-south1 \
+            --service-account=recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com \
+            --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
+            --env-vars-file=/tmp/prod-env-vars.yaml \
+            --command="alembic" \
+            --args="upgrade,head" \
+            --wait \
+            --project=recruitflow-ai-500719
+
       - name: Deploy to Cloud Run
         # --memory=2Gi: the default 1GiB limit OOM'd during container
         # startup (1027 MiB used, confirmed via `gcloud logging read` on
@@ -94,7 +136,7 @@ jobs:
         # runs `celery worker` alongside a stdlib http.server just so Cloud
         # Run has a $PORT to health-check - see that script for detail).
         # --service-account explicit for the same reason as the migration
-        # job below: this is a brand-new service with no prior revision to
+        # job above: this is a brand-new service with no prior revision to
         # inherit a runtime identity from, so it'd otherwise default to the
         # project's default compute SA, which recruitflow-agents has no
         # actAs permission on. --no-allow-unauthenticated: this service has
@@ -112,34 +154,3 @@ jobs:
             --command=/app/worker-entrypoint.sh \
             --port=8080 \
             --no-allow-unauthenticated
-
-      - name: Run migrations
-        # RF-73: single persistent job (recruitflow-migrate), not one named
-        # per-SHA. A bare-SHA job name collided ("already exists") whenever
-        # the same commit's deploy was re-triggered - concurrent worktree
-        # sessions or a manual retry both land on the same SHA. Updating a
-        # fixed job name and re-executing it means retries/concurrent runs
-        # just race harmlessly to the same job instead of colliding.
-        # --service-account: on first-ever creation the job has no existing
-        # revision to inherit a runtime identity from (unlike the deploy
-        # step above), so it defaults to the project's default compute
-        # SA - which recruitflow-agents has no actAs permission on.
-        # Pointing it at recruitflow-agents explicitly reuses the
-        # self-actAs grant already set up for the deploy step instead of
-        # granting broader access on the default compute SA.
-        run: |
-          if gcloud run jobs describe recruitflow-migrate --region=asia-south1 --project=recruitflow-ai-500719 >/dev/null 2>&1; then
-            ACTION=update
-          else
-            ACTION=create
-          fi
-          gcloud run jobs $ACTION recruitflow-migrate \
-            --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
-            --region=asia-south1 \
-            --service-account=recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com \
-            --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
-            --env-vars-file=/tmp/prod-env-vars.yaml \
-            --command="alembic" \
-            --args="upgrade,head" \
-            --execute-now \
-            --project=recruitflow-ai-500719
