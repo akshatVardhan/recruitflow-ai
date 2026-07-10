@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     doc_upload_bucket: str = "recruitflow-documents"
 
     gcs_bucket_name: str = ""
-    gcs_credentials_json: str = ""
+    gcs_hmac_access_key: str = ""
+    gcs_hmac_secret_key: str = ""
 
     jwt_secret_key: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
