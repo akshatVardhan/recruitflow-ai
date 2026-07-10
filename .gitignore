@@ -7,8 +7,6 @@
 # scripts/sync-agent-files.sh to pull it into place (needed once per clone
 # and once per new worktree).
 .agents/
-.opencode/
-opencode.json
 AGENTS.md
 
 # Environment variables - never commit

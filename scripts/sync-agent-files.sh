@@ -1,5 +1,5 @@
 #!/bin/bash
-# RecruitFlow AI - sync .agents/, .opencode/, opencode.json, AGENTS.md
+# RecruitFlow AI - sync .agents/, AGENTS.md
 #
 # These paths are gitignored in this repo and live instead in the private
 # companion repo recruitflow-ai-agents (not secrets - just internal
@@ -7,6 +7,9 @@
 #   - once after cloning this repo fresh
 #   - again after creating any new `git worktree` (worktrees only get
 #     git-tracked files, so these paths won't exist there until this runs)
+#   - again after any PR merges on recruitflow-ai-agents (the sync is
+#     one-directional and does not run itself - an existing worktree keeps
+#     reading a stale snapshot until this re-runs)
 #
 # Requires: gh CLI authenticated with access to akshatVardhan/recruitflow-ai-agents
 
@@ -23,9 +26,9 @@ else
   gh repo clone "$COMPANION_REPO" "$CACHE_DIR" -- --quiet
 fi
 
-for path in .agents .opencode opencode.json AGENTS.md; do
+for path in .agents AGENTS.md; do
   rm -rf "${TARGET_DIR:?}/$path"
   cp -r "$CACHE_DIR/$path" "$TARGET_DIR/$path"
 done
 
-echo "Synced .agents/, .opencode/, opencode.json, AGENTS.md into $TARGET_DIR"
+echo "Synced .agents/, AGENTS.md into $TARGET_DIR"
