@@ -36,6 +36,52 @@ Location: components/shared/top-bar.tsx
 Used in: AppShell
 Notes: always shows active client name, user menu on right
        client name comes from useActiveClient hook
+       STALE as of 2026-07-10: no useActiveClient hook exists anywhere
+       in the codebase (verified via grep) - this note predates
+       PR #64's real tenancy model (see docs/ADR.md ADR-009), where
+       client_id is passed per-request rather than held as one "active"
+       client. Needs a real fix, not touched here to keep this entry's
+       scope to what PR #64 actually added.
+
+---
+
+## Auth (added by PR #64, RF-CONTRACT-1 / RF-63)
+
+### LoginPage
+Location: app/(auth)/login/page.tsx
+Used in: /login route
+Notes: plain email/password form, calls useAuth().login, redirects to
+       /doc-studio on success. No "remember me" or OAuth, email+password only.
+
+### RegisterPage
+Location: app/(auth)/register/page.tsx
+Used in: /register route
+Notes: calls lib/api/auth.ts's registerUser directly (not through
+       useAuth) then presumably redirects to /login - registration
+       doesn't auto-login.
+
+### useAuth
+Location: hooks/use-auth.ts
+Used in: LoginPage (RegisterPage calls the API function directly instead)
+Returns: { user, isLoading, error, login, ... } - login() posts to
+         /api/v1/auth/login, stores the access token via
+         lib/api's setAccessToken, sets user state from the response.
+Notes: No client-selection concept here - see ADR-009, tenancy is
+       per-request client_id, not a hook-level "active client."
+
+### lib/api/auth.ts, lib/api/clients.ts
+Location: lib/api/auth.ts, lib/api/clients.ts
+Used in: RegisterPage (auth.ts), any client-scoped page (clients.ts)
+Notes: thin fetch wrappers over the shared axios instance in lib/api.ts
+       (which holds the access token / attaches the Bearer header).
+       clients.ts exposes listClients/createClient against
+       /api/v1/clients - no update/delete yet, matches the backend's
+       current CRUD surface (create+list only as of PR #64).
+
+There is no separate "client-selector" component - client selection
+happens inline wherever a client_id is needed (e.g. the doc upload
+form), not via a shared reusable picker. If one gets built later, add
+it here.
 
 ---
 

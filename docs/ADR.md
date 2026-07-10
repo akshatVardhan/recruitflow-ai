@@ -197,8 +197,8 @@ upload vanishes with zero trace. A loud out-of-memory error on a full
 queue is the safer failure mode than silent data loss.
 
 Consequences:
-REDIS_URL and QDRANT_URL/QDRANT_API_KEY wired into Doppler's dev config
-(prod not yet done - RF-54 scope). Both use TLS (rediss:// / https://).
+REDIS_URL and QDRANT_URL/QDRANT_API_KEY wired into Doppler's dev config.
+Both use TLS (rediss:// / https://).
 Discovered and fixed a real bug during validation: Celery's Redis result
 backend requires ssl_cert_reqs set explicitly for rediss:// URLs, which
 nothing in worker.py configured - see the fix commit on
@@ -207,3 +207,154 @@ fix/celery-redis-ssl-backend (PR #50) for detail. Qdrant's 3 collections
 cluster via the existing idempotent ensure_collections() in
 core/qdrant.py - no code changes needed there, just running it against
 the new instance.
+
+Update (2026-07-10, RF-54): prod Doppler config populated too - same
+Redis/Qdrant instances as dev, shared rather than separately
+provisioned (owner-approved, simplest at this project's scale). See
+RF-54's agent-run-log.md entry for the full prod-deploy fix chain this
+required (Workload Identity Federation, Cloud Run memory sizing, etc.)
+- out of scope for this ADR, which is about the provider choice, not
+the deploy pipeline.
+
+---
+
+## ADR-008 - JWT via python-jose, Bearer Access Token + Cookie Refresh Token
+Date: 2026-07-10 (retroactive - written after RF-63 implementation shipped,
+not before it as RF-62's acceptance criteria intended; see Process note below)
+Status: Accepted
+Agent: DevOps Eng (Claude Code), documenting Backend Dev's shipped implementation
+
+Decision:
+JWT-based auth using python-jose for encode/decode, HS256 signing, a
+short-lived access token (60 min default) returned in the response body
+and sent as a Bearer header, and a longer-lived refresh token (7 days
+default) set as an httpOnly cookie scoped to /api/v1/auth.
+
+Reasoning:
+python-jose was already the dependency in place when this ADR was
+written retroactively - RF-48's original plan called for a PyJWT
+migration instead, but the shipped code (backend/app/modules/auth/
+service.py) uses jose.jwt throughout and there is no indication a
+migration was ever done. Recorded here as the actual decision rather
+than the originally planned one; revisiting the PyJWT switch is a
+separate, optional future task if a concrete reason to migrate ever
+appears (python-jose has had past CVEs - see the pip-audit exchange
+history in the sprint-state memory for the pyasn1/python-jose version
+pinning saga - but the currently pinned version has no known open
+vulnerabilities as of this writing).
+Access-token-in-body + refresh-token-in-cookie is a standard split:
+the access token is short-lived enough that XSS exposure risk is
+bounded, while the refresh token needs httpOnly protection since it's
+long-lived and higher-value. is_production toggles the refresh
+cookie's SameSite/Secure attributes (Lax+non-secure for same-origin
+local dev, None+Secure for the real cross-origin Vercel+Cloud Run
+production split) - see config.py's is_production field comment.
+
+Consequences:
+Token payload: {sub: user_id, type: "access"|"refresh", iat, exp} -
+no tenancy/role claims, see ADR-009 for why.
+Refresh tokens are currently stateless: decode_token() only checks the
+JWT's own signature and type claim, there is no server-side token
+store. This means logout only clears the client-side cookie - a
+stolen or previously-issued refresh token remains valid until it
+naturally expires, it cannot be revoked. RF-64's acceptance criteria
+already tracks this as open work (a refresh_tokens table with rotation
+and server-side revocation) - not done as of this ADR, do not assume
+otherwise without checking RF-64's current status first.
+
+Process note: RF-62 asked for this ADR to be written and reviewed
+*before* RF-63's implementation started. That did not happen - RF-63
+(and RF-64) shipped first (PR #63, 2026-07-06), and this ADR is being
+written after the fact to document what was actually built. Not
+correcting the history, just being honest that the intended
+architect-reviews-before-implementation sequencing didn't hold here.
+
+---
+
+## ADR-009 - Tenancy via Per-Request client_id Ownership Check, Not a JWT Claim
+Date: 2026-07-10 (retroactive, same caveat as ADR-008)
+Status: Accepted
+Agent: DevOps Eng (Claude Code), documenting Backend Dev's shipped implementation
+
+Decision:
+A user can own multiple Clients (backend/app/modules/clients/models.py:
+Client.user_id is a foreign key to User, one-to-many). Every
+client-scoped request (documents, uploads, etc.) carries its own
+client_id explicitly - as a path parameter or request body field - and
+the backend checks ownership (the requested client's user_id matches
+the authenticated user from get_current_user) per request. There is no
+"active client" claim baked into the JWT, and no switch-client
+endpoint - a user simply addresses whichever client they own on each
+request.
+
+Reasoning:
+This differs from RF-62's original proposal (a single client_id claim
+in the JWT plus a switch-client endpoint that reissues tokens when the
+user changes context). The per-request-ownership-check model is
+simpler for a multi-client user: no token reissuance needed to operate
+across clients in the same session, no risk of a stale client_id claim
+in a still-valid access token after a switch. The tradeoff is an
+ownership check on every client-scoped endpoint instead of a single
+claim decode - a real but small per-request cost, not a security
+concern (the check itself is a straightforward equality comparison
+against an already-fetched row).
+
+Consequences:
+Every new endpoint that operates on a specific client's data must
+remember to check ownership explicitly - this is not automatically
+enforced by a shared JWT claim the way the original design would have
+been. Worth a shared dependency/decorator if the number of
+client-scoped endpoints grows large enough that repeating the check
+becomes error-prone; not done yet, not clearly needed yet either given
+the current endpoint count.
+This ADR does not change RF-64's still-open refresh-token-revocation
+gap (see ADR-008) - they're related (both are auth/tenancy hardening)
+but distinct pieces of work.
+
+---
+
+## ADR-010 - Keep PyMuPDF (AGPL) for PDF Extraction
+Date: 2026-07-10
+Status: Accepted
+Agent: DevOps Eng (Claude Code)
+
+Decision:
+Keep PyMuPDF (imported as `fitz`, pinned at 1.28.0 in requirements.txt,
+used in backend/app/modules/documents/extractor.py) for PDF text
+extraction rather than switching to pypdf or another permissively
+licensed alternative.
+
+Reasoning:
+PyMuPDF's open-source distribution is AGPL-3.0 licensed. AGPL's network-use
+clause (section 13) requires offering the complete corresponding source
+to users who interact with the software over a network - relevant here
+since RecruitFlow is a network-accessed SaaS product, not
+locally-distributed software. However: this repository is already
+public (a deliberate decision made 2026-07-03, verified via a full git
+history secret scan before doing so - see progress.md's "Pre-Publication
+Git History Secret Scan" section), meaning the actual source code AGPL
+cares about making available is already available, to anyone, not just
+to users of the deployed service. This substantially satisfies AGPL's
+practical intent even if it doesn't tick every formal compliance box a
+lawyer might want (e.g. an explicit in-app "source code" link, a formal
+written offer). PyMuPDF's extraction quality (particularly for
+complex/scanned resume layouts, tables, and multi-column text) is also
+meaningfully better than pypdf's in informal testing during earlier
+sprints - not benchmarked rigorously, but the gap was visible enough
+that switching has a real product-quality cost, not just a licensing
+question.
+
+This is not legal advice and this ADR does not constitute a formal
+compliance review - if RecruitFlow's business model ever requires the
+repository to go private, or if a customer/investor due-diligence
+process specifically flags this, revisit then. Artifex (PyMuPDF's
+maintainer) also sells a commercial (non-AGPL) license, which is the
+fallback if the public-repo rationale ever stops applying.
+
+Consequences:
+No code or requirements.txt change from this ADR - it documents an
+already-made, already-shipped choice. If this decision is ever
+reversed, pypdf is the most likely replacement (already evaluated
+informally, pure-Python, no AGPL concerns) - budget for a real
+extraction-quality regression test against a sample of actual resume
+PDFs before swapping, not just a "does it run without crashing" check.
