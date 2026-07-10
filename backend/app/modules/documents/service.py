@@ -71,6 +71,26 @@ async def get_document(db: AsyncSession, document_id: uuid.UUID) -> Optional[Doc
     return result.scalar_one_or_none()
 
 
+async def get_document_for_user(
+    db: AsyncSession, document_id: uuid.UUID, user_id: uuid.UUID
+) -> Optional[Document]:
+    """Same as get_document, but scoped to the requesting user.
+
+    Returns None both when the document doesn't exist and when it belongs
+    to someone else - callers should raise a 404 either way, not a 403,
+    so a document ID can't be used to probe whether it exists for another
+    user (see RF-78).
+    """
+    result = await db.execute(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == user_id,
+            Document.deleted_at.is_(None),
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_document_status(
     db: AsyncSession, document_id: uuid.UUID
 ) -> Optional[dict]:
