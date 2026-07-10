@@ -114,7 +114,13 @@ jobs:
             --no-allow-unauthenticated
 
       - name: Run migrations
-        # --service-account: gcloud run jobs create has no existing
+        # RF-73: single persistent job (recruitflow-migrate), not one named
+        # per-SHA. A bare-SHA job name collided ("already exists") whenever
+        # the same commit's deploy was re-triggered - concurrent worktree
+        # sessions or a manual retry both land on the same SHA. Updating a
+        # fixed job name and re-executing it means retries/concurrent runs
+        # just race harmlessly to the same job instead of colliding.
+        # --service-account: on first-ever creation the job has no existing
         # revision to inherit a runtime identity from (unlike the deploy
         # step above), so it defaults to the project's default compute
         # SA - which recruitflow-agents has no actAs permission on.
@@ -122,7 +128,12 @@ jobs:
         # self-actAs grant already set up for the deploy step instead of
         # granting broader access on the default compute SA.
         run: |
-          gcloud run jobs create migrate-${{ github.sha }} \
+          if gcloud run jobs describe recruitflow-migrate --region=asia-south1 --project=recruitflow-ai-500719 >/dev/null 2>&1; then
+            ACTION=update
+          else
+            ACTION=create
+          fi
+          gcloud run jobs $ACTION recruitflow-migrate \
             --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
             --region=asia-south1 \
             --service-account=recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com \
