@@ -3,6 +3,8 @@ name: Frontend CI
 on:
   push:
     branches:
+      - staging
+      - main
       - feature/*
       - bugfix/*
     paths:
