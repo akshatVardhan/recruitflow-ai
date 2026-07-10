@@ -89,6 +89,30 @@ jobs:
             --env-vars-file=/tmp/prod-env-vars.yaml \
             --memory=2Gi
 
+      - name: Deploy Celery worker to Cloud Run
+        # Same image as the API, different entrypoint (worker-entrypoint.sh
+        # runs `celery worker` alongside a stdlib http.server just so Cloud
+        # Run has a $PORT to health-check - see that script for detail).
+        # --service-account explicit for the same reason as the migration
+        # job below: this is a brand-new service with no prior revision to
+        # inherit a runtime identity from, so it'd otherwise default to the
+        # project's default compute SA, which recruitflow-agents has no
+        # actAs permission on. --no-allow-unauthenticated: this service has
+        # no legitimate external HTTP callers, only Cloud Run's own health
+        # checks and the Redis broker connection it makes outbound.
+        run: |
+          gcloud run deploy recruitflow-worker \
+            --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
+            --region=asia-south1 \
+            --project=recruitflow-ai-500719 \
+            --service-account=recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com \
+            --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
+            --env-vars-file=/tmp/prod-env-vars.yaml \
+            --memory=2Gi \
+            --command=/app/worker-entrypoint.sh \
+            --port=8080 \
+            --no-allow-unauthenticated
+
       - name: Run migrations
         # --service-account: gcloud run jobs create has no existing
         # revision to inherit a runtime identity from (unlike the deploy
