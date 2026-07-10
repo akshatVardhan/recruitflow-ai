@@ -15,9 +15,10 @@ from app.modules.documents.schemas import (
     DocumentStatusResponse,
     DocumentUploadResponse,
 )
+from app.modules.clients.service import get_client_for_user
 from app.modules.documents.service import (
     create_document,
-    get_document,
+    get_document_for_user,
     get_document_status,
 )
 from app.worker import ingest_document
@@ -29,9 +30,10 @@ router = APIRouter()
 async def chunk_existing_document(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Chunk an extracted document based on its type."""
-    doc = await get_document(db, document_id)
+    doc = await get_document_for_user(db, document_id, current_user.id)
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     if not doc.extracted_text:
@@ -56,6 +58,13 @@ async def upload_document(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # RF-78: client_id is caller-supplied - without this check any
+    # authenticated user could upload documents under a client they don't
+    # own. 404 (not 403) so a client ID can't be probed for existence.
+    owned_client = await get_client_for_user(db, client_id, current_user.id)
+    if owned_client is None:
+        raise HTTPException(status_code=404, detail="Client not found")
+
     document = await create_document(
         db=db,
         client_id=client_id,
@@ -82,8 +91,9 @@ async def upload_document(
 async def get_document_by_id(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    document = await get_document(db, document_id)
+    document = await get_document_for_user(db, document_id, current_user.id)
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return DocumentDetailResponse.model_validate(document)
@@ -93,8 +103,16 @@ async def get_document_by_id(
 async def extract_document(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Trigger text extraction for an uploaded document."""
+    # Ownership check first - extract_document_text() itself is unscoped
+    # (it's also called by the Celery worker with no user context), so
+    # scoping happens here at the HTTP boundary instead of in the shared
+    # function.
+    if await get_document_for_user(db, document_id, current_user.id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
     text = await extract_document_text(document_id, db)
     if text is None:
         raise HTTPException(
@@ -113,8 +131,15 @@ async def extract_document(
 async def tag_existing_document(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Trigger auto-tagging via DeepSeek for an extracted document."""
+    # Same reasoning as extract_document above: tag_document() is shared
+    # with the worker's unscoped ingestion path, so ownership is checked
+    # here instead.
+    if await get_document_for_user(db, document_id, current_user.id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
     tags = await tag_document(document_id, db)
     if tags is None:
         raise HTTPException(
@@ -128,7 +153,11 @@ async def tag_existing_document(
 async def get_upload_status(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    if await get_document_for_user(db, document_id, current_user.id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
     status = await get_document_status(db, document_id)
     if status is None:
         raise HTTPException(status_code=404, detail="Document not found")

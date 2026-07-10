@@ -80,8 +80,11 @@ def test_chunk_empty_text():
 
 
 @pytest.mark.anyio
-async def test_chunk_nonexistent_document_returns_404():
+async def test_chunk_nonexistent_document_returns_404(auth_headers):
+    """RF-78: this endpoint now requires auth, so the request needs a token."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post(f"/api/v1/documents/{uuid.uuid4()}/chunk")
+        response = await client.post(
+            f"/api/v1/documents/{uuid.uuid4()}/chunk", headers=auth_headers
+        )
         assert response.status_code == 404
