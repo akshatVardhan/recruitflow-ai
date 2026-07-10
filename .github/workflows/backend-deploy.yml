@@ -90,10 +90,18 @@ jobs:
             --memory=2Gi
 
       - name: Run migrations
+        # --service-account: gcloud run jobs create has no existing
+        # revision to inherit a runtime identity from (unlike the deploy
+        # step above), so it defaults to the project's default compute
+        # SA - which recruitflow-agents has no actAs permission on.
+        # Pointing it at recruitflow-agents explicitly reuses the
+        # self-actAs grant already set up for the deploy step instead of
+        # granting broader access on the default compute SA.
         run: |
           gcloud run jobs create migrate-${{ github.sha }} \
             --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
             --region=asia-south1 \
+            --service-account=recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com \
             --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
             --env-vars-file=/tmp/prod-env-vars.yaml \
             --command="alembic" \
