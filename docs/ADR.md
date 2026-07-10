@@ -389,3 +389,60 @@ reversed, pypdf is the most likely replacement (already evaluated
 informally, pure-Python, no AGPL concerns) - budget for a real
 extraction-quality regression test against a sample of actual resume
 PDFs before swapping, not just a "does it run without crashing" check.
+
+---
+
+## ADR-011 - Migrate Before Deploy, Abort on Migration Failure
+Date: 2026-07-11
+Status: Accepted
+Agent: DevOps Eng (Claude Code)
+
+Decision:
+In .github/workflows/backend-deploy.yml, run the recruitflow-migrate
+Cloud Run Job (`alembic upgrade head`) before deploying either
+recruitflow-backend or recruitflow-worker, and use `gcloud run jobs
+update --wait` (not `--execute-now`) so the workflow step's own exit
+code reflects the migration container's real result.
+
+Reasoning:
+The job previously ran migrations last, after both services were
+already serving the new image - meaning new code could hit a not-yet-
+migrated schema for the entire deploy window. It also used
+`--execute-now` alone, which only waits for the Cloud Run Job execution
+to *start*, not finish; a container that exited non-zero still left
+gcloud (and the GitHub Actions step) reporting success, so a broken
+migration would never have blocked the deploy even after reordering.
+`--wait` implies `--execute-now` and blocks until the execution
+completes, surfacing the container's real exit code. With that in
+place, GitHub Actions' default fail-fast behavior (no
+`continue-on-error` is set anywhere in this job) means a failed
+migration step fails the job and skips every remaining step - both
+`gcloud run deploy` calls simply never run, so no traffic is ever
+promoted to a revision expecting a schema that isn't there. No custom
+abort logic was needed beyond correct step ordering + `--wait`.
+
+Consequences:
+Rollback path if a bad migration lands anyway (e.g. it succeeded but
+the resulting schema is wrong in a way alembic couldn't catch):
+1. Revert the migrating revision:
+   `gcloud run jobs update recruitflow-migrate --region=asia-south1 --project=recruitflow-ai-500719 --command=alembic --args=downgrade,-1 --wait`
+   downgrades one revision. For a specific target instead of one step
+   back, pass `--args=downgrade,<revision_id>`. If the migration isn't
+   cleanly reversible (e.g. it dropped a column and data was lost),
+   alembic downgrade can't recover the data - restore via Cloud SQL
+   point-in-time recovery instead
+   (recruitflow-ai-500719:asia-south1:recruitflow-db), which needs a
+   manual decision on acceptable data loss window and is not
+   automated here.
+2. Roll back the deployed image independently of the schema: Cloud Run
+   keeps prior revisions, so
+   `gcloud run services update-traffic recruitflow-backend --region=asia-south1 --project=recruitflow-ai-500719 --to-revisions=<prior-revision>=100`
+   (and the same for recruitflow-worker) repoints traffic without a
+   rebuild. Since migrations now always run before deploy, the prior
+   revision was validated against the pre-migration schema - only use
+   this to revert a bad *code* change, not to dodge a bad migration
+   (the schema is likely already forward-migrated and the old code may
+   not be compatible with it).
+3. In both cases, a fixed job name (recruitflow-migrate) and fixed
+   service names mean no lookup is needed - the names above are the
+   only ones that exist in this project.
