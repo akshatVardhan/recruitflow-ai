@@ -179,6 +179,49 @@ async def test_refresh_rejects_access_token_used_as_refresh_cookie():
 
 
 @pytest.mark.anyio
+async def test_refresh_rotation_invalidates_old_token():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        email = _unique_email()
+        await client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "full_name": "Ada", "password": "testpass123"},
+        )
+        await client.post(
+            "/api/v1/auth/login", json={"email": email, "password": "testpass123"}
+        )
+        old_refresh_token = client.cookies.get("refresh_token")
+        first = await client.post("/api/v1/auth/refresh")
+        assert first.status_code == 200
+        # Replay the pre-rotation cookie value directly: it was revoked
+        # server-side the moment the new refresh token was issued.
+        client.cookies.set("refresh_token", old_refresh_token)
+        second = await client.post("/api/v1/auth/refresh")
+        assert second.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_logout_revokes_refresh_token_server_side():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        email = _unique_email()
+        await client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "full_name": "Ada", "password": "testpass123"},
+        )
+        await client.post(
+            "/api/v1/auth/login", json={"email": email, "password": "testpass123"}
+        )
+        refresh_token = client.cookies.get("refresh_token")
+        await client.post("/api/v1/auth/logout")
+        # The cookie is cleared client-side; replay the raw value to confirm
+        # logout also revoked it server-side, not just cleared the cookie.
+        client.cookies.set("refresh_token", refresh_token)
+        response = await client.post("/api/v1/auth/refresh")
+        assert response.status_code == 401
+
+
+@pytest.mark.anyio
 async def test_logout_clears_refresh_cookie():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
