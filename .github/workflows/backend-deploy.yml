@@ -74,13 +74,20 @@ jobs:
             | python3 -c "import json, sys; data = json.load(sys.stdin); open('/tmp/prod-env-vars.yaml', 'w').writelines(f'{k}: {json.dumps(str(v))}\n' for k, v in data.items() if not k.startswith('DOPPLER_'))"
 
       - name: Deploy to Cloud Run
+        # --memory=2Gi: the default 1GiB limit OOM'd during container
+        # startup (1027 MiB used, confirmed via `gcloud logging read` on
+        # the failed revision) before the app could even bind to its
+        # port - torch/transformers/sentence-transformers have a large
+        # baseline footprint. Revisit once RF-61 (pre-bake the embedding
+        # model into the image) lands, which may lower the real number.
         run: |
           gcloud run deploy recruitflow-backend \
             --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
             --region=asia-south1 \
             --project=recruitflow-ai-500719 \
             --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
-            --env-vars-file=/tmp/prod-env-vars.yaml
+            --env-vars-file=/tmp/prod-env-vars.yaml \
+            --memory=2Gi
 
       - name: Run migrations
         run: |
