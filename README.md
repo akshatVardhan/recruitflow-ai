@@ -183,7 +183,8 @@ recruitflow-ai/
     .env.example             # documents variable names only - not used to run the app
 ```
 
-Agent operating files (`.agents/`, `CLAUDE.md`, `.claude/skills/`) live in a
+Agent operating files (`.agents/`, `CLAUDE.md`, `.claude/skills/`,
+`.claude/rules/`) live in a
 private companion repo and are pulled in locally via
 `scripts/sync-agent-files.sh` - they're internal process docs, not part of
 the shipped product. All agent roles run as plain Claude Code sessions

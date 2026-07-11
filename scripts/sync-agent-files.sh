@@ -1,5 +1,5 @@
 #!/bin/bash
-# RecruitFlow AI - sync .agents/, CLAUDE.md, .claude/skills
+# RecruitFlow AI - sync .agents/, CLAUDE.md, .claude/skills, .claude/rules
 #
 # These paths are gitignored in this repo and live instead in the private
 # companion repo recruitflow-ai-agents (not secrets - just internal
@@ -32,7 +32,7 @@ fi
 # there (as this exact commit does, twice) breaks every worktree's sync
 # until this script itself catches up - same failure class as the
 # .opencode sync break this project already hit twice.
-for path in .agents CLAUDE.md .claude/skills; do
+for path in .agents CLAUDE.md .claude/skills .claude/rules; do
   [ -e "$CACHE_DIR/$path" ] || continue
   rm -rf "${TARGET_DIR:?}/$path"
   mkdir -p "$(dirname "$TARGET_DIR/$path")"
@@ -50,4 +50,4 @@ rm -f "${TARGET_DIR:?}/AGENTS.md"
 # Freshness marker, read by CLAUDE.md's bootstrap staleness check.
 git -C "$CACHE_DIR" rev-parse HEAD > "$TARGET_DIR/.agents/.synced-commit"
 
-echo "Synced .agents/, CLAUDE.md, .claude/skills/ into $TARGET_DIR"
+echo "Synced .agents/, CLAUDE.md, .claude/skills/, .claude/rules/ into $TARGET_DIR"
