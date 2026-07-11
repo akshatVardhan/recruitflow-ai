@@ -237,7 +237,10 @@ async def test_reingest_deletes_stale_chunks_and_vectors_before_requeue(db_sessi
 
         mock_qdrant = MagicMock()
         with (
-            patch("app.core.qdrant.get_qdrant_client", return_value=mock_qdrant),
+            patch(
+                "app.modules.documents.service.get_qdrant_client",
+                return_value=mock_qdrant,
+            ),
             patch("app.worker.ingest_document.delay") as mock_delay,
         ):
             response = await client.post(
