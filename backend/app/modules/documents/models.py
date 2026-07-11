@@ -34,6 +34,10 @@ class Document(Base):
     file_name: Mapped[str] = mapped_column(String, nullable=False)
     file_size_kb: Mapped[int | None] = mapped_column(Integer, nullable=True)
     mime_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    # uploaded -> extracting -> chunking -> embedding -> completed / failed
+    status: Mapped[str] = mapped_column(
+        String, nullable=False, server_default=text("'uploaded'"), index=True
+    )
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     auto_tags: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     manual_tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)

@@ -7,6 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.embeddings import _get_qdrant_collection_name
+from app.core.qdrant import get_qdrant_client
 from app.core.storage import delete_file, upload_file
 from app.modules.documents.models import Document, DocChunk
 
@@ -112,6 +114,27 @@ async def get_document_status(
         "id": doc.id,
         "title": doc.title,
         "doc_type": doc.doc_type,
-        "status": "uploaded",
+        "status": doc.status,
         "created_at": doc.created_at,
     }
+
+
+async def delete_document_vectors_and_chunks(
+    db: AsyncSession, document: Document
+) -> None:
+    """Remove a document's Qdrant points and DocChunk rows.
+
+    Called before re-ingestion so an update doesn't leave orphaned vectors
+    behind - the old chunks/points are gone before the new ones are written.
+    """
+    chunks = await get_document_chunks(db, document.id)
+    if chunks:
+        collection = _get_qdrant_collection_name(document.doc_type)
+        client = get_qdrant_client()
+        client.delete(
+            collection_name=collection,
+            points_selector=[str(c.qdrant_point_id) for c in chunks],
+        )
+        for chunk in chunks:
+            await db.delete(chunk)
+        await db.commit()
