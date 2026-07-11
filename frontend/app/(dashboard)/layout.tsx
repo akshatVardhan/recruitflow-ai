@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
+import { useAuth } from "@/hooks/use-auth"
 import { FileText, Users, Briefcase, Search, MessageSquare, Menu, X, Building2 } from "lucide-react"
 
 const navItems = [
@@ -18,7 +19,30 @@ const navItems = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  // RF-72: route guard for dashboard pages. Deliberately NOT a
+  // frontend/middleware.ts edge check - in production the refresh-token
+  // cookie is scoped to the backend's own Cloud Run origin (SameSite=None,
+  // cross-origin from the Vercel-hosted frontend per ADR-008), so Next.js
+  // middleware running on the frontend's server would never see it and
+  // would permanently redirect every legitimately logged-in user to
+  // /login. useAuth's session restore (RF-71) already makes the real,
+  // cross-origin-safe check by calling the backend directly; this guard
+  // just acts on that result.
+  const { user, isInitializing } = useAuth()
+
+  useEffect(() => {
+    if (!isInitializing && !user) {
+      router.replace("/login")
+    }
+  }, [isInitializing, user, router])
+
+  if (isInitializing || !user) {
+    // Avoid flashing protected content while the session restore is still
+    // in flight, or during the redirect above.
+    return null
+  }
 
   return (
     <div className="flex h-screen">

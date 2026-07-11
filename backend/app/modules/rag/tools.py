@@ -6,6 +6,15 @@ Tools:
 - generate_document: stream a new document via GLM 5.2 (DeepInfra) RAG
 - score_resume: score a resume against a job description
 - list_candidates: list candidates matching filters
+
+RF-68 note: search_documents_fn/list_candidates_fn take client_id as a
+plain tool parameter, which today an LLM agent would fill in from
+conversation context - not currently reachable from any live endpoint
+(chat/router.py is still a stub), but whoever wires these into a real
+chat agent MUST bind client_id server-side (from an already-ownership-
+checked value, same pattern as rag/router.py's /search endpoint) rather
+than trust the LLM's tool-call arguments, which an ingested document's
+content could influence via prompt injection.
 """
 
 import json
