@@ -183,22 +183,27 @@ recruitflow-ai/
     .env.example             # documents variable names only - not used to run the app
 ```
 
-Agent operating files (`.agents/`, `AGENTS.md`) live in a private companion
-repo and are pulled in locally via `scripts/sync-agent-files.sh` - they're
-internal process docs, not part of the shipped product. All agent roles run
-as plain Claude Code sessions (OpenCode retired 2026-07-11); there is no
-separate tool config to sync alongside these two paths.
+Agent operating files (`.agents/`, `CLAUDE.md`, `.claude/skills/`) live in a
+private companion repo and are pulled in locally via
+`scripts/sync-agent-files.sh` - they're internal process docs, not part of
+the shipped product. All agent roles run as plain Claude Code sessions
+(OpenCode retired 2026-07-11); there is no separate tool config to sync
+alongside these paths. `CLAUDE.md` (Claude Code-native, auto-loads into
+every session automatically) replaced the tool-agnostic `AGENTS.md` on
+2026-07-11 - `AGENTS.md` is retired, don't recreate it.
 
 **Run `scripts/sync-agent-files.sh` immediately after creating any new
-`git worktree`, before launching an agent in it.** These 2 paths are
-gitignored, so a fresh worktree has none of them - no `AGENTS.md` for an
-agent to even know to read. This file is the one guaranteed-present
-bootstrap pointer (it's the only one of these instructions that isn't
-itself inside a gitignored path), since `.agents/conventions.md`'s own copy
-of this same instruction is unreachable until after you've already run the
-sync it's describing. Also re-run this after any PR merges on
-recruitflow-ai-agents - the sync is one-directional and won't happen on its
-own, so an existing worktree keeps reading a stale snapshot until you do.
+`git worktree`, before launching an agent in it.** These paths are
+gitignored, so a fresh worktree has none of them - no `CLAUDE.md` for
+Claude Code to even auto-load. If `CLAUDE.md` is missing from your working
+directory, you haven't run the sync yet - this file (unlike the gitignored
+paths it describes) is the one guaranteed-present bootstrap pointer, since
+`.agents/conventions.md`'s own copy of this same instruction is unreachable
+until after you've already run the sync it's describing. Also re-run this
+after any PR merges on recruitflow-ai-agents - the sync is one-directional
+and won't happen on its own, so an existing worktree keeps reading a stale
+snapshot until you do (CLAUDE.md's own bootstrap runs a soft freshness
+check for this too, but it's non-blocking - don't rely on it alone).
 
 ## Documentation
 
