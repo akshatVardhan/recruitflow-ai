@@ -49,6 +49,7 @@ class DocumentDetailResponse(BaseModel):
     file_name: str
     file_size_kb: Optional[int] = None
     mime_type: Optional[str] = None
+    status: str
     extracted_text: Optional[str] = None
     auto_tags: Optional[dict] = None
     manual_tags: Optional[list[str]] = None

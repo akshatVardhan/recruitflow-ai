@@ -18,6 +18,7 @@ from app.modules.documents.schemas import (
 from app.modules.clients.service import get_client_for_user
 from app.modules.documents.service import (
     create_document,
+    delete_document_vectors_and_chunks,
     get_document_for_user,
     get_document_status,
 )
@@ -82,7 +83,7 @@ async def upload_document(
         doc_type=document.doc_type,
         file_name=document.file_name,
         file_size_kb=document.file_size_kb,
-        status="processing",
+        status=document.status,
         created_at=document.created_at,
     )
 
@@ -162,3 +163,22 @@ async def get_upload_status(
     if status is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return DocumentStatusResponse(**status)
+
+
+@router.post("/{document_id}/reingest")
+async def reingest_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Wipe this document's existing chunks/Qdrant points and re-run
+    ingestion, so re-processing an already-ingested document doesn't leave
+    the old vectors behind alongside the new ones."""
+    document = await get_document_for_user(db, document_id, current_user.id)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    await delete_document_vectors_and_chunks(db, document)
+    ingest_document.delay(str(document.id))
+
+    return {"id": str(document_id), "status": "queued"}

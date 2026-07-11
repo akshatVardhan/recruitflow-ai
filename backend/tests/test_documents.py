@@ -1,9 +1,13 @@
 import uuid
+from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
+from app.modules.clients.models import Client
+from app.modules.documents.models import Document, DocChunk
+from app.modules.documents.service import get_document_chunks
 
 
 async def _auth_headers(client: AsyncClient) -> dict:
@@ -154,6 +158,7 @@ async def test_get_nonexistent_document_status_returns_404():
         ("POST", "/api/v1/documents/{id}/chunk"),
         ("POST", "/api/v1/documents/{id}/extract"),
         ("POST", "/api/v1/documents/{id}/tag"),
+        ("POST", "/api/v1/documents/{id}/reingest"),
     ],
 )
 async def test_document_endpoints_require_auth(method, path):
@@ -189,3 +194,63 @@ async def test_get_document_rejects_other_users_document():
             f"/api/v1/documents/{document_id}", headers=attacker_headers
         )
         assert response.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_reingest_deletes_stale_chunks_and_vectors_before_requeue(db_session):
+    """RF-58: reingest must remove a document's existing DocChunk rows and
+    their Qdrant points before re-queuing ingestion - otherwise an update
+    leaves stale vectors sitting alongside the freshly re-ingested ones."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        me = await client.get("/api/v1/auth/me", headers=headers)
+        user_id = uuid.UUID(me.json()["id"])
+
+        client_row = Client(user_id=user_id, name="Test Client")
+        db_session.add(client_row)
+        await db_session.flush()
+
+        doc = Document(
+            client_id=client_row.id,
+            user_id=user_id,
+            title="Resume",
+            doc_type="resume",
+            file_path="documents/x/x.pdf",
+            file_name="resume.pdf",
+            status="completed",
+        )
+        db_session.add(doc)
+        await db_session.flush()
+
+        stale_point_ids = [uuid.uuid4(), uuid.uuid4()]
+        db_session.add_all(
+            DocChunk(
+                document_id=doc.id,
+                chunk_index=i,
+                chunk_text=f"chunk {i}",
+                qdrant_point_id=point_id,
+            )
+            for i, point_id in enumerate(stale_point_ids)
+        )
+        await db_session.commit()
+
+        mock_qdrant = MagicMock()
+        with (
+            patch("app.core.qdrant.get_qdrant_client", return_value=mock_qdrant),
+            patch("app.worker.ingest_document.delay") as mock_delay,
+        ):
+            response = await client.post(
+                f"/api/v1/documents/{doc.id}/reingest", headers=headers
+            )
+
+        assert response.status_code == 200
+        mock_delay.assert_called_once_with(str(doc.id))
+
+        mock_qdrant.delete.assert_called_once()
+        _, kwargs = mock_qdrant.delete.call_args
+        assert kwargs["collection_name"] == "resumes"
+        assert set(kwargs["points_selector"]) == {str(p) for p in stale_point_ids}
+
+        remaining = await get_document_chunks(db_session, doc.id)
+        assert remaining == []

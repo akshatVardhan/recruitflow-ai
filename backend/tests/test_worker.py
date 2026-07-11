@@ -40,11 +40,7 @@ def test_ingest_document_calls_pipeline(mock_pipeline):
     assert result["document_id"] == "test-doc-id"
 
 
-@pytest.mark.anyio
-async def test_pipeline_persists_doc_chunks_with_qdrant_point_ids(db_session):
-    """RF-57: after ingestion, each chunk must be persisted as a DocChunk row
-    carrying the exact Qdrant point ID embed_and_store_chunks returned for it,
-    so RF-58's delete/re-ingest flow can find the points to remove."""
+async def _create_test_document(db_session, **overrides) -> Document:
     user = User(
         email=f"{uuid.uuid4()}@example.com",
         full_name="Test User",
@@ -57,18 +53,29 @@ async def test_pipeline_persists_doc_chunks_with_qdrant_point_ids(db_session):
     db_session.add(client_row)
     await db_session.flush()
 
-    doc = Document(
-        client_id=client_row.id,
-        user_id=user.id,
+    fields = dict(
         title="Policy",
         doc_type="policy",
         file_path="documents/x/x.pdf",
         file_name="policy.pdf",
-        extracted_text="Paragraph one.\n\n" + ("filler " * 600) + "\n\nParagraph two.",
     )
+    fields.update(overrides)
+    doc = Document(client_id=client_row.id, user_id=user.id, **fields)
     db_session.add(doc)
     await db_session.commit()
     await db_session.refresh(doc)
+    return doc
+
+
+@pytest.mark.anyio
+async def test_pipeline_persists_doc_chunks_with_qdrant_point_ids(db_session):
+    """RF-57: after ingestion, each chunk must be persisted as a DocChunk row
+    carrying the exact Qdrant point ID embed_and_store_chunks returned for it,
+    so RF-58's delete/re-ingest flow can find the points to remove."""
+    doc = await _create_test_document(
+        db_session,
+        extracted_text="Paragraph one.\n\n" + ("filler " * 600) + "\n\nParagraph two.",
+    )
 
     # Real chunker output drives the fake point IDs, so this doesn't hardcode
     # a chunk count that paragraph-merging logic could silently invalidate.
@@ -100,3 +107,51 @@ async def test_pipeline_persists_doc_chunks_with_qdrant_point_ids(db_session):
     assert [c.chunk_text for c in persisted] == [
         c["chunk_text"] for c in expected_chunks
     ]
+
+    await db_session.refresh(doc)
+    assert doc.status == "completed"
+
+
+@pytest.mark.anyio
+async def test_pipeline_marks_document_failed_on_extraction_failure(db_session):
+    """RF-58: a failed extraction step must leave the document status as
+    'failed', not silently stuck wherever it last was."""
+    doc = await _create_test_document(db_session)
+    assert doc.status == "uploaded"
+
+    with patch(
+        "app.modules.documents.extractor.extract_document_text",
+        new=AsyncMock(return_value=None),
+    ):
+        await _run_ingestion_pipeline(str(doc.id))
+
+    await db_session.refresh(doc)
+    assert doc.status == "failed"
+
+
+@pytest.mark.anyio
+async def test_pipeline_marks_document_failed_on_unexpected_exception(db_session):
+    """RF-58: an exception anywhere in the pipeline (e.g. the embedding call
+    blowing up) must still land the document in 'failed', and propagate so
+    Celery's retry logic still sees it."""
+    doc = await _create_test_document(db_session, extracted_text="Some text.")
+
+    with (
+        patch(
+            "app.modules.documents.extractor.extract_document_text",
+            new=AsyncMock(return_value=doc.extracted_text),
+        ),
+        patch(
+            "app.modules.documents.auto_tagger.auto_tag_document_text",
+            new=AsyncMock(return_value={}),
+        ),
+        patch(
+            "app.core.embeddings.embed_and_store_chunks",
+            new=AsyncMock(side_effect=RuntimeError("qdrant is down")),
+        ),
+        pytest.raises(RuntimeError),
+    ):
+        await _run_ingestion_pipeline(str(doc.id))
+
+    await db_session.refresh(doc)
+    assert doc.status == "failed"

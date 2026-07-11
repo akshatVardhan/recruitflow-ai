@@ -73,42 +73,59 @@ async def _run_ingestion_pipeline(document_id: str):
             logger.error(f"Document {document_id} not found for ingestion")
             return
 
-        # 1. Extract text
-        text = await extract_document_text(doc.id, db)
-        if not text:
-            logger.error(f"Extraction failed for document {document_id}")
-            return
+        try:
+            # 1. Extract text
+            doc.status = "extracting"
+            await db.commit()
+            text = await extract_document_text(doc.id, db)
+            if not text:
+                logger.error(f"Extraction failed for document {document_id}")
+                doc.status = "failed"
+                await db.commit()
+                return
 
-        await db.refresh(doc)
+            await db.refresh(doc)
 
-        # 2. Auto-tag
-        tags = await auto_tag_document_text(doc.extracted_text or "")
-        doc.auto_tags = tags
-        await db.commit()
+            # 2. Auto-tag
+            tags = await auto_tag_document_text(doc.extracted_text or "")
+            doc.auto_tags = tags
 
-        # 3. Chunk
-        chunks = chunk_document(doc)
-        if not chunks:
-            logger.warning(f"No chunks generated for document {document_id}")
-            return
+            # 3. Chunk
+            doc.status = "chunking"
+            await db.commit()
+            chunks = chunk_document(doc)
+            if not chunks:
+                logger.warning(f"No chunks generated for document {document_id}")
+                doc.status = "failed"
+                await db.commit()
+                return
 
-        client_id = str(doc.client_id)
-        doc_type = doc.doc_type
+            client_id = str(doc.client_id)
+            doc_type = doc.doc_type
 
-        # 4. Embed and store in Qdrant
-        point_ids = await embed_and_store_chunks(chunks, doc_type, client_id, tags)
+            # 4. Embed and store in Qdrant
+            doc.status = "embedding"
+            await db.commit()
+            point_ids = await embed_and_store_chunks(chunks, doc_type, client_id, tags)
 
-        # 5. Persist chunks + their Qdrant point IDs so they're queryable
-        # and so a later delete/re-ingest can find the points to remove.
-        db.add_all(
-            DocChunk(
-                document_id=doc.id,
-                chunk_index=chunk["chunk_index"],
-                chunk_text=chunk["chunk_text"],
-                qdrant_point_id=point_id,
+            # 5. Persist chunks + their Qdrant point IDs so they're queryable
+            # and so a later delete/re-ingest can find the points to remove.
+            db.add_all(
+                DocChunk(
+                    document_id=doc.id,
+                    chunk_index=chunk["chunk_index"],
+                    chunk_text=chunk["chunk_text"],
+                    qdrant_point_id=point_id,
+                )
+                for chunk, point_id in zip(chunks, point_ids)
             )
-            for chunk, point_id in zip(chunks, point_ids)
-        )
-        await db.commit()
+            doc.status = "completed"
+            await db.commit()
 
-        logger.info(f"Stored {len(point_ids)} Qdrant points for document {document_id}")
+            logger.info(
+                f"Stored {len(point_ids)} Qdrant points for document {document_id}"
+            )
+        except Exception:
+            doc.status = "failed"
+            await db.commit()
+            raise
