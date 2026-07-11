@@ -1,9 +1,17 @@
 """Tests for Celery worker and ingestion pipeline."""
 
 import ssl
-from unittest.mock import patch
+import uuid
+from unittest.mock import patch, AsyncMock
 
-from app.worker import ingest_document, celery_app
+import pytest
+
+from app.worker import ingest_document, celery_app, _run_ingestion_pipeline
+from app.modules.auth.models import User
+from app.modules.clients.models import Client
+from app.modules.documents.chunker import chunk_document
+from app.modules.documents.models import Document
+from app.modules.documents.service import get_document_chunks
 
 
 def test_celery_app_config():
@@ -30,3 +38,65 @@ def test_ingest_document_calls_pipeline(mock_pipeline):
     result = ingest_document("test-doc-id")
     assert result["status"] == "completed"
     assert result["document_id"] == "test-doc-id"
+
+
+@pytest.mark.anyio
+async def test_pipeline_persists_doc_chunks_with_qdrant_point_ids(db_session):
+    """RF-57: after ingestion, each chunk must be persisted as a DocChunk row
+    carrying the exact Qdrant point ID embed_and_store_chunks returned for it,
+    so RF-58's delete/re-ingest flow can find the points to remove."""
+    user = User(
+        email=f"{uuid.uuid4()}@example.com",
+        full_name="Test User",
+        hashed_password="x",
+    )
+    db_session.add(user)
+    await db_session.flush()
+
+    client_row = Client(user_id=user.id, name="Test Client")
+    db_session.add(client_row)
+    await db_session.flush()
+
+    doc = Document(
+        client_id=client_row.id,
+        user_id=user.id,
+        title="Policy",
+        doc_type="policy",
+        file_path="documents/x/x.pdf",
+        file_name="policy.pdf",
+        extracted_text="Paragraph one.\n\n" + ("filler " * 600) + "\n\nParagraph two.",
+    )
+    db_session.add(doc)
+    await db_session.commit()
+    await db_session.refresh(doc)
+
+    # Real chunker output drives the fake point IDs, so this doesn't hardcode
+    # a chunk count that paragraph-merging logic could silently invalidate.
+    expected_chunks = chunk_document(doc)
+    assert len(expected_chunks) > 1
+    fake_point_ids = [uuid.uuid4() for _ in expected_chunks]
+
+    with (
+        patch(
+            "app.modules.documents.extractor.extract_document_text",
+            new=AsyncMock(return_value=doc.extracted_text),
+        ),
+        patch(
+            "app.modules.documents.auto_tagger.auto_tag_document_text",
+            new=AsyncMock(return_value={}),
+        ),
+        patch(
+            "app.core.embeddings.embed_and_store_chunks",
+            new=AsyncMock(return_value=fake_point_ids),
+        ),
+    ):
+        await _run_ingestion_pipeline(str(doc.id))
+
+    persisted = await get_document_chunks(db_session, doc.id)
+    assert [c.qdrant_point_id for c in persisted] == fake_point_ids
+    assert [c.chunk_index for c in persisted] == [
+        c["chunk_index"] for c in expected_chunks
+    ]
+    assert [c.chunk_text for c in persisted] == [
+        c["chunk_text"] for c in expected_chunks
+    ]

@@ -60,7 +60,7 @@ async def _run_ingestion_pipeline(document_id: str):
     from app.modules.documents.auto_tagger import auto_tag_document_text
     from app.modules.documents.chunker import chunk_document
     from app.modules.documents.extractor import extract_document_text
-    from app.modules.documents.models import Document
+    from app.modules.documents.models import Document, DocChunk
 
     async with async_session_factory() as db:
         result = await db.execute(
@@ -97,5 +97,18 @@ async def _run_ingestion_pipeline(document_id: str):
 
         # 4. Embed and store in Qdrant
         point_ids = await embed_and_store_chunks(chunks, doc_type, client_id, tags)
+
+        # 5. Persist chunks + their Qdrant point IDs so they're queryable
+        # and so a later delete/re-ingest can find the points to remove.
+        db.add_all(
+            DocChunk(
+                document_id=doc.id,
+                chunk_index=chunk["chunk_index"],
+                chunk_text=chunk["chunk_text"],
+                qdrant_point_id=point_id,
+            )
+            for chunk, point_id in zip(chunks, point_ids)
+        )
+        await db.commit()
 
         logger.info(f"Stored {len(point_ids)} Qdrant points for document {document_id}")

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.storage import delete_file, upload_file
-from app.modules.documents.models import Document
+from app.modules.documents.models import Document, DocChunk
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,17 @@ async def get_document_for_user(
         )
     )
     return result.scalar_one_or_none()
+
+
+async def get_document_chunks(
+    db: AsyncSession, document_id: uuid.UUID
+) -> list[DocChunk]:
+    result = await db.execute(
+        select(DocChunk)
+        .where(DocChunk.document_id == document_id)
+        .order_by(DocChunk.chunk_index)
+    )
+    return list(result.scalars().all())
 
 
 async def get_document_status(
