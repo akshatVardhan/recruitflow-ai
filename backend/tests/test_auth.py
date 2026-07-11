@@ -1,9 +1,11 @@
 import uuid
+from datetime import timedelta
 
 import pytest
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
+from app.modules.auth.service import _create_token
 
 
 def _unique_email() -> str:
@@ -118,6 +120,26 @@ async def test_me_with_valid_token_returns_user():
         )
         assert response.status_code == 200
         assert response.json()["email"] == email
+
+
+@pytest.mark.anyio
+async def test_me_with_expired_token_fails():
+    """RF-65: an access token past its exp claim must be rejected, not just
+    a malformed one - decode_token's JWTError catch covers both jose's
+    ExpiredSignatureError (a JWTError subclass) and outright garbage."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        email = _unique_email()
+        register = await client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "full_name": "Ada", "password": "testpass123"},
+        )
+        user_id = uuid.UUID(register.json()["id"])
+        expired_token = _create_token(user_id, timedelta(minutes=-5), "access")
+        response = await client.get(
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {expired_token}"}
+        )
+        assert response.status_code == 401
 
 
 @pytest.mark.anyio

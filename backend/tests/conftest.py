@@ -63,3 +63,36 @@ async def auth_headers(client):
     )
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+async def _make_tenant(client: AsyncClient) -> dict:
+    """Register + log in a throwaway user, create a client they own.
+
+    Returns {"headers": ..., "client_id": ...} - everything a test needs to
+    act as this tenant and prove another tenant can't reach their data.
+    """
+    email = f"{uuid.uuid4()}@example.com"
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "full_name": "Test User", "password": "testpass123"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "testpass123"}
+    )
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    create = await client.post(
+        "/api/v1/clients", json={"name": "Test Client"}, headers=headers
+    )
+    return {"headers": headers, "client_id": create.json()["id"]}
+
+
+@pytest.fixture
+async def tenant_a(client):
+    """RF-66: one of two distinct users, each with their own client."""
+    return await _make_tenant(client)
+
+
+@pytest.fixture
+async def tenant_b(client):
+    """RF-66: the other of two distinct users, each with their own client."""
+    return await _make_tenant(client)

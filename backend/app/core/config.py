@@ -38,9 +38,31 @@ class Settings(BaseSettings):
     deepinfra_api_key: str = ""
     proxycurl_api_key: str = ""
 
-    next_public_api_base_url: str = "http://localhost:3000"
+    # The frontend's own origin, for CORS allow_origins - NOT
+    # next_public_api_base_url (that's the frontend's env var naming the
+    # backend's URL, a different value entirely - see RF-70/ADR-009).
+    frontend_origin: str = "http://localhost:3000"
 
     model_config = {"extra": "ignore"}
 
 
 settings = Settings()
+
+_PLACEHOLDER_JWT_SECRETS = {"change-me-in-production", ""}
+
+
+class JWTSecretMisconfigured(RuntimeError):
+    pass
+
+
+def validate_jwt_secret(secret_key: str, is_production: bool) -> None:
+    """RF-65: refuse to start in production with a missing/placeholder JWT
+    secret - a weak/default secret lets anyone forge access tokens."""
+    if not is_production:
+        return
+    if not secret_key or secret_key in _PLACEHOLDER_JWT_SECRETS or len(secret_key) < 32:
+        raise JWTSecretMisconfigured(
+            "JWT_SECRET_KEY is missing, a placeholder value, or too short "
+            "(min 32 chars) - refusing to start in production. Set a real "
+            "secret via Doppler."
+        )
