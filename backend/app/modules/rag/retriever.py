@@ -80,15 +80,15 @@ def semantic_search(
             FieldCondition(key="client_id", match=MatchValue(value=client_id))
         ]
 
-        search_result = client.search(
+        search_result = client.query_points(
             collection_name=collection,
-            query_vector=query_vector,
+            query=query_vector,
             query_filter=Filter(must=must_filters),
             limit=limit,
             with_payload=True,
         )
 
-        for scored_point in search_result:
+        for scored_point in search_result.points:
             payload = scored_point.payload or {}
             all_results.append(
                 {
