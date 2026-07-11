@@ -1,6 +1,7 @@
 # RecruitFlow AI - Component Registry
 
-# Maintained by: Frontend Dev
+# Maintained by: Implementer (2026-07-11: Frontend Dev merged into
+# Implementer in a role consolidation)
 # Updated whenever a new reusable component is created or an existing one changes.
 # Purpose: prevents duplicate components being built across features.
 # Before building any new component, check if one already exists here.
@@ -87,7 +88,7 @@ it here.
 
 ## Shared Components
 
-(populated by Frontend Dev as components are built)
+(populated by Implementer as components are built)
 
 ### Example entry format:
 

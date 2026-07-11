@@ -1,13 +1,16 @@
-# .claude/ is Claude Code-specific and not compatible with current tooling
-.claude/
-
 # Agent tooling/process docs - not secrets (no credentials live here, ever -
 # that's Doppler-only), just kept off the public repo. Lives in the private
 # companion repo recruitflow-ai-agents instead - run
 # scripts/sync-agent-files.sh to pull it into place (needed once per clone
 # and once per new worktree).
 .agents/
-AGENTS.md
+CLAUDE.md
+
+# .claude/ is Claude Code tooling. Most of it is local-only (worktree
+# bookkeeping, local settings) - .claude/skills/ (and later .claude/rules/)
+# sync from the companion repo the same way .agents/ does, same reasoning:
+# not tracked here, pulled in by the sync script.
+.claude/
 
 # Environment variables - never commit
 .env

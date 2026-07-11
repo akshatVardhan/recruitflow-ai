@@ -1,6 +1,8 @@
 # RecruitFlow AI - Architectural Decision Records
 
-# Maintained by: Architect
+# Maintained by: no single owner (2026-07-11: the Architect role that used
+# to own this file was dissolved in a role consolidation - any role records
+# a decision here via the /adr skill when making one).
 # Updated whenever a significant architectural decision is made.
 # Each ADR is permanent - never delete or overwrite an existing entry.
 # If a decision is reversed, add a new ADR superseding the old one.
