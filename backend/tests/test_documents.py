@@ -6,6 +6,7 @@ from httpx import AsyncClient, ASGITransport
 
 from app.main import app
 from app.modules.clients.models import Client
+from app.modules.documents import router as documents_router
 from app.modules.documents.models import Document, DocChunk
 from app.modules.documents.service import get_document_chunks
 
@@ -103,6 +104,57 @@ async def test_upload_document_success():
         )
         # Note: requires DB + MinIO to pass fully; validates schema/auth/ownership at minimum
         assert response.status_code in (201, 422, 500)
+
+
+@pytest.mark.anyio
+async def test_upload_document_rejects_oversized_file(monkeypatch):
+    """RF-59: files over the size cap must be rejected with 413, before upload/DB work."""
+    monkeypatch.setattr(documents_router, "MAX_FILE_SIZE_BYTES", 10)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        client_id = await _owned_client_id(client, headers)
+        response = await client.post(
+            "/api/v1/documents/upload",
+            data={"client_id": client_id, "title": "Big File", "doc_type": "resume"},
+            files={"file": ("big.pdf", b"way more than ten bytes", "application/pdf")},
+            headers=headers,
+        )
+        assert response.status_code == 413
+
+
+@pytest.mark.anyio
+async def test_upload_document_rejects_disallowed_extension():
+    """RF-59: only .pdf/.docx files are accepted; anything else is 415."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        client_id = await _owned_client_id(client, headers)
+        response = await client.post(
+            "/api/v1/documents/upload",
+            data={"client_id": client_id, "title": "Script", "doc_type": "resume"},
+            files={
+                "file": ("payload.exe", b"MZ mock binary", "application/octet-stream")
+            },
+            headers=headers,
+        )
+        assert response.status_code == 415
+
+
+@pytest.mark.anyio
+async def test_upload_document_rejects_mismatched_mime_type():
+    """RF-59: a .pdf-named file whose declared content-type isn't PDF/DOCX must 415 too."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        client_id = await _owned_client_id(client, headers)
+        response = await client.post(
+            "/api/v1/documents/upload",
+            data={"client_id": client_id, "title": "Spoofed", "doc_type": "resume"},
+            files={"file": ("resume.pdf", b"not really a pdf", "text/plain")},
+            headers=headers,
+        )
+        assert response.status_code == 415
 
 
 @pytest.mark.anyio
