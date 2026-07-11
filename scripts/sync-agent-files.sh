@@ -35,6 +35,7 @@ fi
 for path in .agents CLAUDE.md .claude/skills; do
   [ -e "$CACHE_DIR/$path" ] || continue
   rm -rf "${TARGET_DIR:?}/$path"
+  mkdir -p "$(dirname "$TARGET_DIR/$path")"
   cp -r "$CACHE_DIR/$path" "$TARGET_DIR/$path"
 done
 
