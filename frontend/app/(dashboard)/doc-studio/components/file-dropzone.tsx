@@ -13,7 +13,7 @@ export const ACCEPTED_TYPES = [
 ]
 export const ACCEPTED_EXTENSIONS = ".pdf,.docx"
 
-function isValidType(file: File): boolean {
+export function isValidFileType(file: File): boolean {
   const name = file.name.toLowerCase()
   const extOk = name.endsWith(".pdf") || name.endsWith(".docx")
   return ACCEPTED_TYPES.includes(file.type) || extOk
@@ -47,7 +47,7 @@ export function FileDropzone({ onFilesSelected, currentCount, disabled }: FileDr
 
       const accepted: File[] = []
       for (const file of incoming) {
-        if (!isValidType(file)) {
+        if (!isValidFileType(file)) {
           toast({
             variant: "destructive",
             title: "Unsupported file type",
