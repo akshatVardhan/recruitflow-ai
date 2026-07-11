@@ -26,6 +26,16 @@ from app.worker import ingest_document
 
 router = APIRouter()
 
+# Matches the frontend's file-dropzone.tsx (MAX_FILE_SIZE / ACCEPTED_TYPES) -
+# that 20 MB limit is the actual shipped/tested policy, not the 10 MB figure
+# in stale planning docs.
+MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
+ALLOWED_CONTENT_TYPES = {
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+ALLOWED_EXTENSIONS = {".pdf", ".docx"}
+
 
 @router.post("/{document_id}/chunk")
 async def chunk_existing_document(
@@ -65,6 +75,22 @@ async def upload_document(
     owned_client = await get_client_for_user(db, client_id, current_user.id)
     if owned_client is None:
         raise HTTPException(status_code=404, detail="Client not found")
+
+    # file.size is populated by Starlette's multipart parser as it spools the
+    # upload, so this check happens before create_document's own read()
+    # (and before the blob upload it triggers) rather than after.
+    if file.size is not None and file.size > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds the 20 MB size limit")
+
+    ext = (
+        "." + file.filename.rsplit(".", 1)[-1].lower()
+        if file.filename and "." in file.filename
+        else ""
+    )
+    if ext not in ALLOWED_EXTENSIONS or file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=415, detail="Only PDF and DOCX files are allowed"
+        )
 
     document = await create_document(
         db=db,
