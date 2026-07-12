@@ -587,3 +587,45 @@ starts no longer risk a slow/flaky HF Hub fetch (or failing outright
 with no network egress). Revisit if the embedding model is ever
 swapped for a larger one - the build-time cost and image size grow
 with model size.
+
+## ADR-015 - Worker Service Needs --no-cpu-throttling, Not Just min-instances=1
+Date: 2026-07-12
+Status: Accepted
+Agent: DevOps Eng (Claude Code), discovered while live-verifying RF-89
+
+Decision:
+`recruitflow-worker` is deployed with `--no-cpu-throttling` (CPU
+always allocated), in addition to ADR-013's `--min-instances=1`.
+
+Reasoning:
+After fixing RF-89's three worker bugs and RF-90's botocore
+regression, a live smoke test still hung: a task was received by a
+warm, `ready` Celery process and then produced zero further log
+lines - no error, no crash, no OOM, no container restart - for over
+9 minutes. Root cause: Cloud Run's default CPU throttling only
+allocates CPU to a container while it's actively handling an HTTP
+request. `recruitflow-worker` has no real HTTP traffic
+(`--no-allow-unauthenticated`, only Cloud Run's own health probe hits
+it briefly), so the Celery consumer thread doing the actual
+CPU-bound work (PyMuPDF extraction, sentence-transformers embedding)
+was starved of CPU between those brief probe windows - not crashed,
+just running at a near-zero clock rate. ADR-013's min-instances=1
+keeps an instance warm and connected to the broker, but does nothing
+about CPU allocation once a task is actually running.
+
+Confirmed via `gcloud run services describe recruitflow-worker`: no
+`run.googleapis.com/cpu-throttling` annotation was set (defaults to
+throttling on). After `gcloud run services update recruitflow-worker
+--no-cpu-throttling`, the next task completed end-to-end (extract ->
+tag -> chunk -> embed -> completed) in 45 seconds.
+
+Consequences:
+Further real recurring cost on top of ADR-013's always-on instance:
+GCP bills for CPU continuously rather than only during request
+handling. Accepted for the same reason as ADR-013 - a worker that
+can't actually finish its CPU-bound work defeats the point of
+deploying it. This is Cloud Run's standard, documented guidance for
+any background-consumer workload (Celery, Cloud Tasks handlers,
+etc.), not something specific to this codebase. Revisit only if
+ingestion moves off a long-lived Cloud Run Service consumer
+entirely (e.g. the Cloud Run Job redesign floated in ADR-013).
