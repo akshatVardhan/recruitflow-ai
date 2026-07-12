@@ -14,9 +14,15 @@ class Settings(BaseSettings):
     minio_access_key: str = "minioadmin"
     minio_secret_key: str = "minioadmin"
     minio_secure: bool = False
+    # The single source of truth for "which bucket documents live in" -
+    # used for both GCS and MinIO. There used to be a second,
+    # GCS-specific `gcs_bucket_name` setting that only ever fed a
+    # truthiness check for client routing (never the actual bucket param),
+    # and it drifting out of sync with this one caused a real prod outage
+    # (NoSuchBucket) - removed in favor of gating GCS-vs-MinIO routing on
+    # whether GCS HMAC credentials are actually configured.
     doc_upload_bucket: str = "recruitflow-documents"
 
-    gcs_bucket_name: str = ""
     gcs_hmac_access_key: str = ""
     gcs_hmac_secret_key: str = ""
 
