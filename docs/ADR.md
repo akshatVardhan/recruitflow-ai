@@ -542,3 +542,48 @@ would be a larger redesign. Revisit if `app.worker`'s import footprint
 is ever slimmed down enough that cold start reliably beats Cloud Run's
 idle-scale-down window, since that would remove the need for
 `min-instances=1` entirely.
+
+## ADR-014 - Pre-Bake Embedding Model into Docker Image at Build Time
+Date: 2026-07-12
+Status: Accepted
+Agent: DevOps Eng (Claude Code), RF-61
+
+Decision:
+`backend/Dockerfile` now runs
+`SentenceTransformer('BAAI/bge-small-en-v1.5')` once during the image
+build (right after `pip install`, before `COPY . .`), so the model
+weights are baked into the image's HuggingFace cache layer.
+`app/core/embeddings.py`'s `get_embedding_model()` is unchanged - it
+still calls `SentenceTransformer(MODEL_NAME)` lazily on first use, but
+now finds the weights already on disk instead of fetching them over
+the network.
+
+Reasoning:
+Previously the model was downloaded from the HF Hub on whichever
+request first triggered `get_embedding_model()`, after the container
+was already accepting traffic. That request paid for the full
+download on top of Cloud Run's own cold start.
+
+Measured impact (proxy for Docker build, since this sandbox has no
+Docker daemon): cleared the local HF cache and timed
+`SentenceTransformer(MODEL_NAME)` cold (network download) vs warm
+(cache pre-populated, as it would be after this Dockerfile change),
+isolating one-time `sentence_transformers`/`torch` import overhead
+(unaffected by this change, paid on every container start either way)
+from the model-load call itself:
+
+| | cold (no cache, downloads) | warm (pre-baked) |
+|---|---|---|
+| model load call | ~17.8s | ~7.4s |
+
+The ~10s delta is the network download this change eliminates from
+the request path - it now happens once at build time instead of on
+every cold container start.
+
+Consequences:
+Image build time increases by roughly the same ~10s plus the ~130MB
+model gets baked into every image layer/registry push. Runtime cold
+starts no longer risk a slow/flaky HF Hub fetch (or failing outright
+with no network egress). Revisit if the embedding model is ever
+swapped for a larger one - the build-time cost and image size grow
+with model size.
