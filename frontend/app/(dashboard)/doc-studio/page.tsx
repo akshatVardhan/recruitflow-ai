@@ -22,7 +22,7 @@ function stripExtension(name: string): string {
   return dot > 0 ? name.slice(0, dot) : name
 }
 
-function extractErrorMessage(err: unknown): string {
+export function extractErrorMessage(err: unknown): string {
   if (err instanceof AxiosError) {
     const detail = err.response?.data as { detail?: unknown } | undefined
     if (typeof detail?.detail === "string") return detail.detail
@@ -51,10 +51,13 @@ function firstRowError(
           title?: { message?: string }
           doc_type?: { message?: string }
           client_id?: { message?: string }
+          file?: { message?: string }
         }>
       | undefined
   )?.[index]
-  return row?.title?.message ?? row?.doc_type?.message ?? row?.client_id?.message
+  return (
+    row?.title?.message ?? row?.doc_type?.message ?? row?.client_id?.message ?? row?.file?.message
+  )
 }
 
 export default function DocStudioPage() {

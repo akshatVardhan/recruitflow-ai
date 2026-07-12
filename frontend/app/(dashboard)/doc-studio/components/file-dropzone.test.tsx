@@ -3,8 +3,9 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { FileDropzone } from "./file-dropzone"
 
 function makeFile(name: string, size: number, type: string): File {
-  const blob = new Blob([new Array(size).fill("a").join("")], { type })
-  return new File([blob], name, { type })
+  // Uint8Array avoids the string-join allocation, which was slow enough on
+  // 20+ MB files to make this test flaky against the 5000ms default timeout.
+  return new File([new Uint8Array(size)], name, { type })
 }
 
 function setFiles(input: HTMLElement, files: File[]) {
