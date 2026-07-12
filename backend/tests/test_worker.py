@@ -70,8 +70,21 @@ def test_ingest_task_registered():
 @patch("app.worker._run_ingestion_pipeline")
 def test_ingest_document_calls_pipeline(mock_pipeline):
     """ingest_document task should call the async pipeline."""
+    mock_pipeline.return_value = "completed"
     result = ingest_document("test-doc-id")
     assert result["status"] == "completed"
+    assert result["document_id"] == "test-doc-id"
+
+
+@patch("app.worker._run_ingestion_pipeline")
+def test_ingest_document_reports_failed_status_without_raising(mock_pipeline):
+    """RF-89 follow-up: when the pipeline finishes without raising but the
+    document actually ended up 'failed' (e.g. extraction yielded no text),
+    the task's own return value must say so too - not silently claim
+    'completed' just because no exception propagated."""
+    mock_pipeline.return_value = "failed"
+    result = ingest_document("test-doc-id")
+    assert result["status"] == "failed"
     assert result["document_id"] == "test-doc-id"
 
 

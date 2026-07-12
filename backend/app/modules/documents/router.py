@@ -35,6 +35,17 @@ ALLOWED_CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
 ALLOWED_EXTENSIONS = {".pdf", ".docx"}
+# RF-59 follow-up: extension + declared Content-Type are both
+# client-supplied and spoofable together (rename a .exe to .pdf, send a
+# matching fake header). Magic bytes come from the file's actual content,
+# so a mismatch here can't be faked by the client the same way. DOCX is a
+# ZIP container, so its signature is the generic ZIP one - good enough to
+# catch "not actually a PDF or DOCX", not meant to fully validate OOXML
+# structure.
+MAGIC_BYTES_BY_EXTENSION = {
+    ".pdf": b"%PDF-",
+    ".docx": b"PK\x03\x04",
+}
 
 
 @router.post("/{document_id}/chunk")
@@ -90,6 +101,14 @@ async def upload_document(
     if ext not in ALLOWED_EXTENSIONS or file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=415, detail="Only PDF and DOCX files are allowed"
+        )
+
+    magic = await file.read(5)
+    await file.seek(0)
+    if not magic.startswith(MAGIC_BYTES_BY_EXTENSION[ext]):
+        raise HTTPException(
+            status_code=415,
+            detail="File content doesn't match a PDF or DOCX file",
         )
 
     document = await create_document(

@@ -22,7 +22,7 @@ def get_storage_client():
         response_checksum_validation="when_required",
     )
 
-    if settings.gcs_bucket_name:
+    if settings.gcs_hmac_access_key and settings.gcs_hmac_secret_key:
         _s3_client = boto3.client(
             "s3",
             region_name="auto",
