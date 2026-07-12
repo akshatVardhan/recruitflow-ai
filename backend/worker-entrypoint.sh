@@ -5,16 +5,16 @@
 # container as unhealthy and restarts it instead of a wedged worker
 # quietly failing behind a health check that only proves the HTTP server
 # is still up.
-# ponytail: stdlib http.server as the health-check listener, no real
-# liveness signal from Celery itself (just proves the process tree is
-# alive). Upgrade to a proper /health endpoint backed by celery_app.control.ping()
-# if silent-but-stuck workers become a real problem.
+# RF-55: the health listener (app/worker_health.py) calls
+# celery_app.control.ping() on every request, so a hung-but-alive worker
+# (stuck broker reconnect, deadlocked task) now fails the check instead of
+# silently passing.
 set -e
 
 celery -A app.worker worker --loglevel=info &
 CELERY_PID=$!
 
-python -m http.server "${PORT:-8080}" &
+python -m app.worker_health &
 HTTP_PID=$!
 
 wait -n "$CELERY_PID" "$HTTP_PID"
