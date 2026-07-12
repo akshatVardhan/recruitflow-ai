@@ -1,6 +1,6 @@
 import pytest
 
-from app.core.config import JWTSecretMisconfigured, validate_jwt_secret
+from app.core.config import JWTSecretMisconfigured, Settings, validate_jwt_secret
 
 
 def test_validate_jwt_secret_allows_placeholder_outside_production():
@@ -24,3 +24,10 @@ def test_validate_jwt_secret_rejects_short_secret_in_production():
 
 def test_validate_jwt_secret_accepts_real_secret_in_production():
     validate_jwt_secret("a" * 40, is_production=True)
+
+
+def test_gcp_settings_have_sensible_defaults():
+    s = Settings(_env_file=None)
+    assert s.gcp_project_id == ""
+    assert s.gcp_region == "asia-south1"
+    assert s.ingest_job_name == "recruitflow-ingest"
