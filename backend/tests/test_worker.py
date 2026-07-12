@@ -1,7 +1,10 @@
 """Tests for Celery worker and ingestion pipeline."""
 
 import ssl
+import subprocess
+import sys
 import uuid
+from pathlib import Path
 from unittest.mock import patch, AsyncMock
 
 import pytest
@@ -12,6 +15,38 @@ from app.modules.clients.models import Client
 from app.modules.documents.chunker import chunk_document
 from app.modules.documents.models import Document
 from app.modules.documents.service import get_document_chunks
+
+
+def test_worker_module_resolves_foreign_keys_in_isolation():
+    """RF-89: the real worker entrypoint (`celery -A app.worker worker`)
+    only ever imports this module, never app.main - so a regression here
+    can't be caught by importing `app.worker` in-process, since every other
+    test in this suite has already imported `app.main` via conftest.py,
+    which registers every model (including User) before this test runs.
+    Only a subprocess that imports nothing but app.worker reproduces what
+    the deployed worker actually sees; it must exit cleanly, not raise
+    sqlalchemy.exc.NoReferencedTableError on 'users'."""
+    backend_dir = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            # Document is only imported inside _run_ingestion_pipeline's
+            # function body, never at app.worker's module level - import it
+            # here the same way. Accessing fk.column is what actually forces
+            # SQLAlchemy to resolve the string-form ForeignKey("users.id")
+            # against the registry (bare configure_mappers()/select().where()
+            # calls don't touch it when nothing declares a relationship()) -
+            # this is the exact call that raised NoReferencedTableError in
+            # production, so it's what has to be exercised here too.
+            "import app.worker; from app.modules.documents.models import Document; "
+            "list(Document.__table__.c.user_id.foreign_keys)[0].column",
+        ],
+        cwd=str(backend_dir),
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_celery_app_config():
