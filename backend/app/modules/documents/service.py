@@ -7,8 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.embeddings import _get_qdrant_collection_name
+from app.core.qdrant import get_qdrant_client
 from app.core.storage import delete_file, upload_file
-from app.modules.documents.models import Document
+from app.modules.documents.models import Document, DocChunk
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ async def create_document(
 
     doc_id = uuid.uuid4()
     filename = file.filename or ""
-    file_ext = filename.rsplit(".", 1)[-1] if "." in filename else "bin"
+    file_ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "bin"
     file_path = f"documents/{client_id}/{doc_id}.{file_ext}"
 
     # Upload blob to storage first
@@ -91,6 +93,17 @@ async def get_document_for_user(
     return result.scalar_one_or_none()
 
 
+async def get_document_chunks(
+    db: AsyncSession, document_id: uuid.UUID
+) -> list[DocChunk]:
+    result = await db.execute(
+        select(DocChunk)
+        .where(DocChunk.document_id == document_id)
+        .order_by(DocChunk.chunk_index)
+    )
+    return list(result.scalars().all())
+
+
 async def get_document_status(
     db: AsyncSession, document_id: uuid.UUID
 ) -> Optional[dict]:
@@ -101,6 +114,27 @@ async def get_document_status(
         "id": doc.id,
         "title": doc.title,
         "doc_type": doc.doc_type,
-        "status": "uploaded",
+        "status": doc.status,
         "created_at": doc.created_at,
     }
+
+
+async def delete_document_vectors_and_chunks(
+    db: AsyncSession, document: Document
+) -> None:
+    """Remove a document's Qdrant points and DocChunk rows.
+
+    Called before re-ingestion so an update doesn't leave orphaned vectors
+    behind - the old chunks/points are gone before the new ones are written.
+    """
+    chunks = await get_document_chunks(db, document.id)
+    if chunks:
+        collection = _get_qdrant_collection_name(document.doc_type)
+        client = get_qdrant_client()
+        client.delete(
+            collection_name=collection,
+            points_selector=[str(c.qdrant_point_id) for c in chunks],
+        )
+        for chunk in chunks:
+            await db.delete(chunk)
+        await db.commit()

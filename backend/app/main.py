@@ -5,13 +5,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api_router import api_router
-from app.core.config import settings
+from app.core.config import settings, validate_jwt_secret
 from app.core.qdrant import ensure_collections
 from app.shared.middleware import ErrorHandlerMiddleware, RequestLoggingMiddleware
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_jwt_secret(settings.jwt_secret_key, settings.is_production)
     results = await ensure_collections()
     logger = logging.getLogger(__name__)
     for name, status in results.items():
@@ -27,10 +28,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        settings.next_public_api_base_url,
-    ],
+    allow_origins=[settings.frontend_origin],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

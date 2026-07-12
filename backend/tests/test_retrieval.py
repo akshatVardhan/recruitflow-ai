@@ -20,11 +20,25 @@ def test_semantic_search_empty_results():
     with patch("app.modules.rag.retriever.embed_text", return_value=[0.1] * 384):
         with patch("app.modules.rag.retriever.get_qdrant_client") as mock_client:
             mock_qdrant = MagicMock()
-            mock_qdrant.search.return_value = []
+            mock_qdrant.query_points.return_value = MagicMock(points=[])
             mock_client.return_value = mock_qdrant
 
             results = semantic_search("test query", "client-1")
             assert results == []
+
+
+def test_semantic_search_uses_query_points_not_search():
+    """qdrant-client 1.18+ dropped QdrantClient.search(); must call query_points()."""
+    with patch("app.modules.rag.retriever.embed_text", return_value=[0.1] * 384):
+        with patch("app.modules.rag.retriever.get_qdrant_client") as mock_client:
+            mock_qdrant = MagicMock()
+            mock_qdrant.query_points.return_value = MagicMock(points=[])
+            mock_client.return_value = mock_qdrant
+
+            semantic_search("test query", "client-1")
+
+            assert mock_qdrant.query_points.called
+            assert not mock_qdrant.search.called
 
 
 @pytest.mark.anyio

@@ -500,3 +500,90 @@ trigger, runner disk space, Doppler installer sudo, Cloud Run
 self-actAs IAM grant, 2GiB memory bump, migration job service account -
 those are operational fixes, not architectural decisions, so they
 don't get their own ADR entries).
+
+---
+
+## ADR-013 - Worker Service Needs min-instances=1, Not Scale-to-Zero
+Date: 2026-07-12
+Status: Accepted
+Agent: DevOps Eng (Claude Code), discovered while closing out RF-55
+
+Decision:
+`recruitflow-worker` is deployed with `--min-instances=1`, keeping one
+Cloud Run instance running at all times instead of the default
+scale-to-zero behavior.
+
+Reasoning:
+Cloud Run Services autoscale on inbound HTTP request volume, not on
+background work - but `recruitflow-worker` has no legitimate external
+HTTP callers (`--no-allow-unauthenticated`, only Cloud Run's own health
+probe), so it had no signal ever keeping an instance warm. Meanwhile
+`app.worker`'s import chain pulls in the same heavy ML stack
+(torch/sentence-transformers) that required the API service's 2GiB
+memory bump - confirmed via Cloud Logging, Celery took ~6-9 minutes
+from container start to logging "ready" and connecting to the Upstash
+broker. A deploy's own startup probe passes almost instantly (the
+stdlib http.server binds `$PORT` immediately), so Cloud Run considered
+the instance healthy and then scaled it back down as idle long before
+Celery finished booting. Net effect: queued ingestion jobs were very
+unlikely to ever be picked up, regardless of health-check quality -
+confirmed live during RF-55's smoke test, where a queued job sat in
+`status: "uploaded"` for a full 2-minute poll window with zero Celery
+log lines anywhere in that revision's history.
+
+Consequences:
+Real recurring cost: an always-on 2GiB instance instead of
+scale-to-zero. Accepted because a Celery worker that isn't running
+defeats the point of deploying it. If cost becomes a concern, the
+alternative is restructuring ingestion as a Cloud Run Job triggered
+per-upload (e.g. via Pub/Sub or a direct `jobs run` call from the
+upload endpoint) instead of a long-lived consumer - not attempted here,
+would be a larger redesign. Revisit if `app.worker`'s import footprint
+is ever slimmed down enough that cold start reliably beats Cloud Run's
+idle-scale-down window, since that would remove the need for
+`min-instances=1` entirely.
+
+## ADR-014 - Pre-Bake Embedding Model into Docker Image at Build Time
+Date: 2026-07-12
+Status: Accepted
+Agent: DevOps Eng (Claude Code), RF-61
+
+Decision:
+`backend/Dockerfile` now runs
+`SentenceTransformer('BAAI/bge-small-en-v1.5')` once during the image
+build (right after `pip install`, before `COPY . .`), so the model
+weights are baked into the image's HuggingFace cache layer.
+`app/core/embeddings.py`'s `get_embedding_model()` is unchanged - it
+still calls `SentenceTransformer(MODEL_NAME)` lazily on first use, but
+now finds the weights already on disk instead of fetching them over
+the network.
+
+Reasoning:
+Previously the model was downloaded from the HF Hub on whichever
+request first triggered `get_embedding_model()`, after the container
+was already accepting traffic. That request paid for the full
+download on top of Cloud Run's own cold start.
+
+Measured impact (proxy for Docker build, since this sandbox has no
+Docker daemon): cleared the local HF cache and timed
+`SentenceTransformer(MODEL_NAME)` cold (network download) vs warm
+(cache pre-populated, as it would be after this Dockerfile change),
+isolating one-time `sentence_transformers`/`torch` import overhead
+(unaffected by this change, paid on every container start either way)
+from the model-load call itself:
+
+| | cold (no cache, downloads) | warm (pre-baked) |
+|---|---|---|
+| model load call | ~17.8s | ~7.4s |
+
+The ~10s delta is the network download this change eliminates from
+the request path - it now happens once at build time instead of on
+every cold container start.
+
+Consequences:
+Image build time increases by roughly the same ~10s plus the ~130MB
+model gets baked into every image layer/registry push. Runtime cold
+starts no longer risk a slow/flaky HF Hub fetch (or failing outright
+with no network egress). Revisit if the embedding model is ever
+swapped for a larger one - the build-time cost and image size grow
+with model size.
