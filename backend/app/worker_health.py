@@ -34,7 +34,11 @@ class HealthHandler(http.server.BaseHTTPRequestHandler):
 
 def main() -> None:
     port = int(os.environ.get("PORT", 8080))
-    with socketserver.TCPServer(("0.0.0.0", port), HealthHandler) as httpd:
+    # Must bind all interfaces for Cloud Run's health probe to reach it.
+    # --no-allow-unauthenticated blocks external callers at the IAM layer,
+    # and the handler serves no sensitive data.
+    bind_address = ("0.0.0.0", port)  # nosec B104
+    with socketserver.TCPServer(bind_address, HealthHandler) as httpd:
         httpd.serve_forever()
 
 

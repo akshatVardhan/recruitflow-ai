@@ -500,3 +500,45 @@ trigger, runner disk space, Doppler installer sudo, Cloud Run
 self-actAs IAM grant, 2GiB memory bump, migration job service account -
 those are operational fixes, not architectural decisions, so they
 don't get their own ADR entries).
+
+---
+
+## ADR-013 - Worker Service Needs min-instances=1, Not Scale-to-Zero
+Date: 2026-07-12
+Status: Accepted
+Agent: DevOps Eng (Claude Code), discovered while closing out RF-55
+
+Decision:
+`recruitflow-worker` is deployed with `--min-instances=1`, keeping one
+Cloud Run instance running at all times instead of the default
+scale-to-zero behavior.
+
+Reasoning:
+Cloud Run Services autoscale on inbound HTTP request volume, not on
+background work - but `recruitflow-worker` has no legitimate external
+HTTP callers (`--no-allow-unauthenticated`, only Cloud Run's own health
+probe), so it had no signal ever keeping an instance warm. Meanwhile
+`app.worker`'s import chain pulls in the same heavy ML stack
+(torch/sentence-transformers) that required the API service's 2GiB
+memory bump - confirmed via Cloud Logging, Celery took ~6-9 minutes
+from container start to logging "ready" and connecting to the Upstash
+broker. A deploy's own startup probe passes almost instantly (the
+stdlib http.server binds `$PORT` immediately), so Cloud Run considered
+the instance healthy and then scaled it back down as idle long before
+Celery finished booting. Net effect: queued ingestion jobs were very
+unlikely to ever be picked up, regardless of health-check quality -
+confirmed live during RF-55's smoke test, where a queued job sat in
+`status: "uploaded"` for a full 2-minute poll window with zero Celery
+log lines anywhere in that revision's history.
+
+Consequences:
+Real recurring cost: an always-on 2GiB instance instead of
+scale-to-zero. Accepted because a Celery worker that isn't running
+defeats the point of deploying it. If cost becomes a concern, the
+alternative is restructuring ingestion as a Cloud Run Job triggered
+per-upload (e.g. via Pub/Sub or a direct `jobs run` call from the
+upload endpoint) instead of a long-lived consumer - not attempted here,
+would be a larger redesign. Revisit if `app.worker`'s import footprint
+is ever slimmed down enough that cold start reliably beats Cloud Run's
+idle-scale-down window, since that would remove the need for
+`min-instances=1` entirely.
