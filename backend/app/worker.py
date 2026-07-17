@@ -7,7 +7,9 @@ import ssl
 from celery import Celery
 
 from app.core.config import settings
-from app.core.ingestion_pipeline import run_ingestion_pipeline as _run_ingestion_pipeline
+from app.core.ingestion_pipeline import (
+    run_ingestion_pipeline as _run_ingestion_pipeline,
+)
 
 logger = logging.getLogger(__name__)
 
