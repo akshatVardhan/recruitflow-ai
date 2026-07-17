@@ -22,7 +22,7 @@ from app.modules.documents.service import (
     get_document_for_user,
     get_document_status,
 )
-from app.worker import ingest_document
+from app.core.ingestion_trigger import trigger_ingestion
 
 router = APIRouter()
 
@@ -119,8 +119,8 @@ async def upload_document(
         doc_type=doc_type,
         file=file,
     )
-    # Trigger async ingestion via Celery
-    ingest_document.delay(str(document.id))
+    # Trigger ingestion via Cloud Run Job (RF-92)
+    await trigger_ingestion(str(document.id))
 
     return DocumentUploadResponse(
         id=document.id,
@@ -224,6 +224,6 @@ async def reingest_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     await delete_document_vectors_and_chunks(db, document)
-    ingest_document.delay(str(document.id))
+    await trigger_ingestion(str(document.id))
 
     return {"id": str(document_id), "status": "queued"}

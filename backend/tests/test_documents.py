@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient, ASGITransport
@@ -313,14 +313,17 @@ async def test_reingest_deletes_stale_chunks_and_vectors_before_requeue(db_sessi
                 "app.modules.documents.service.get_qdrant_client",
                 return_value=mock_qdrant,
             ),
-            patch("app.worker.ingest_document.delay") as mock_delay,
+            patch(
+                "app.modules.documents.router.trigger_ingestion",
+                new_callable=AsyncMock,
+            ) as mock_trigger,
         ):
             response = await client.post(
                 f"/api/v1/documents/{doc.id}/reingest", headers=headers
             )
 
         assert response.status_code == 200
-        mock_delay.assert_called_once_with(str(doc.id))
+        mock_trigger.assert_awaited_once_with(str(doc.id))
 
         mock_qdrant.delete.assert_called_once()
         _, kwargs = mock_qdrant.delete.call_args
