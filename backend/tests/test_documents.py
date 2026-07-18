@@ -344,3 +344,60 @@ async def test_reingest_deletes_stale_chunks_and_vectors_before_requeue(db_sessi
 
         remaining = await get_document_chunks(db_session, doc.id)
         assert remaining == []
+
+
+@pytest.mark.anyio
+async def test_upload_burst_past_rate_limit_returns_429(monkeypatch):
+    """RF-77: a burst of uploads past the per-user limit must get 429 instead
+    of dispatching more paid ingestion work."""
+    monkeypatch.setattr(documents_router.ingest_rate_limiter, "limit", 2)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        statuses = []
+        for _ in range(3):
+            response = await client.post(
+                "/api/v1/documents/upload",
+                data={
+                    "client_id": str(uuid.uuid4()),
+                    "title": "Burst",
+                    "doc_type": "resume",
+                },
+                files={
+                    "file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")
+                },
+                headers=headers,
+            )
+            statuses.append(response.status_code)
+        # The limiter runs before the handler body, so under-limit requests
+        # still reach the ownership check (404 for this random client_id);
+        # the request past the limit is cut off with 429.
+        assert statuses == [404, 404, 429]
+        assert "Retry-After" in response.headers
+
+
+@pytest.mark.anyio
+async def test_reingest_shares_upload_rate_limit(monkeypatch):
+    """RF-77: reingest dispatches the same paid ingestion work as upload, so
+    both endpoints draw from one shared per-user budget."""
+    monkeypatch.setattr(documents_router.ingest_rate_limiter, "limit", 1)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        first = await client.post(
+            "/api/v1/documents/upload",
+            data={
+                "client_id": str(uuid.uuid4()),
+                "title": "Burst",
+                "doc_type": "resume",
+            },
+            files={"file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")},
+            headers=headers,
+        )
+        # Past the limiter (404 from the ownership check), consuming the budget.
+        assert first.status_code == 404
+        second = await client.post(
+            f"/api/v1/documents/{uuid.uuid4()}/reingest", headers=headers
+        )
+        # Would be 404 (unknown document) if reingest had its own budget.
+        assert second.status_code == 429

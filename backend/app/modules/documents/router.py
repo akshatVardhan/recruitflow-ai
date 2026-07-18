@@ -3,7 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import UserRateLimiter
 from app.modules.auth.models import User
 from app.modules.auth.service import get_current_user
 from app.modules.documents.auto_tagger import tag_document
@@ -46,6 +48,12 @@ MAGIC_BYTES_BY_EXTENSION = {
     ".pdf": b"%PDF-",
     ".docx": b"PK\x03\x04",
 }
+# RF-77: every accepted upload/reingest dispatches paid ingestion work
+# (LLM + embedding calls today, a billed Cloud Run Job execution once RF-92
+# lands), so both endpoints share one per-user budget as a cost backstop.
+ingest_rate_limiter = UserRateLimiter(
+    limit=settings.ingest_rate_limit_per_minute, window_seconds=60
+)
 
 
 @router.post("/{document_id}/chunk")
@@ -71,7 +79,12 @@ async def chunk_existing_document(
     }
 
 
-@router.post("/upload", response_model=DocumentUploadResponse, status_code=201)
+@router.post(
+    "/upload",
+    response_model=DocumentUploadResponse,
+    status_code=201,
+    dependencies=[Depends(ingest_rate_limiter)],
+)
 async def upload_document(
     client_id: uuid.UUID = Form(...),
     title: str = Form(...),
@@ -210,7 +223,7 @@ async def get_upload_status(
     return DocumentStatusResponse(**status)
 
 
-@router.post("/{document_id}/reingest")
+@router.post("/{document_id}/reingest", dependencies=[Depends(ingest_rate_limiter)])
 async def reingest_document(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
