@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     deepinfra_api_key: str = ""
     proxycurl_api_key: str = ""
 
+    # RF-77: shared per-user budget for upload/reingest, since both dispatch
+    # paid ingestion work (LLM/embedding calls, and a billed Cloud Run Job
+    # execution once RF-92 lands).
+    ingest_rate_limit_per_minute: int = 10
+
     # The frontend's own origin, for CORS allow_origins - NOT
     # next_public_api_base_url (that's the frontend's env var naming the
     # backend's URL, a different value entirely - see RF-70/ADR-009).

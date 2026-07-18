@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.rate_limit import UserRateLimiter
 from app.modules.auth.models import User
@@ -50,7 +51,9 @@ MAGIC_BYTES_BY_EXTENSION = {
 # RF-77: every accepted upload/reingest dispatches paid ingestion work
 # (LLM + embedding calls today, a billed Cloud Run Job execution once RF-92
 # lands), so both endpoints share one per-user budget as a cost backstop.
-ingest_rate_limiter = UserRateLimiter(limit=10, window_seconds=60)
+ingest_rate_limiter = UserRateLimiter(
+    limit=settings.ingest_rate_limit_per_minute, window_seconds=60
+)
 
 
 @router.post("/{document_id}/chunk")
