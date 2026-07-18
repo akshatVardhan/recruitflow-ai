@@ -131,26 +131,38 @@ jobs:
             --env-vars-file=/tmp/prod-env-vars.yaml \
             --memory=2Gi
 
-      - name: Deploy Celery worker to Cloud Run
-        # Same image as the API, different entrypoint (worker-entrypoint.sh
-        # runs `celery worker` alongside a stdlib http.server just so Cloud
-        # Run has a $PORT to health-check - see that script for detail).
-        # --service-account explicit for the same reason as the migration
-        # job above: this is a brand-new service with no prior revision to
-        # inherit a runtime identity from, so it'd otherwise default to the
-        # project's default compute SA, which recruitflow-agents has no
-        # actAs permission on. --no-allow-unauthenticated: this service has
-        # no legitimate external HTTP callers, only Cloud Run's own health
-        # checks and the Redis broker connection it makes outbound.
+      - name: Deploy ingestion Cloud Run Job
+        # RF-92: replaces the always-on recruitflow-worker Service (Celery
+        # polling Redis, ADR-013/015) with a Job invoked once per upload via
+        # app/core/ingestion_trigger.py - pay-per-execution instead of an
+        # always-on instance, since Celery's poll-based consumer required
+        # min-instances=1 + no-cpu-throttling to work reliably, which cost
+        # ~8.5x the project's ₹1000/month budget cap. Jobs don't take
+        # --min-instances or --no-cpu-throttling (they don't apply to
+        # pay-per-execution resources) and always get full CPU during their
+        # run, so RF-91's CPU-starvation bug structurally cannot recur here.
+        # Same image as the API and migration job, different entrypoint -
+        # no separate Dockerfile needed, same pattern as recruitflow-migrate.
+        # --service-account explicit for the same first-creation reason as
+        # the migration job: a brand-new Job has no prior revision to
+        # inherit a runtime identity from. recruitflow-agents already has
+        # roles/run.developer at the project level (includes run.jobs.run),
+        # so recruitflow-backend can invoke this job with no further IAM
+        # grant - verified live 2026-07-13, do not add a speculative grant.
         run: |
-          gcloud run deploy recruitflow-worker \
+          if gcloud run jobs describe recruitflow-ingest --region=asia-south1 --project=recruitflow-ai-500719 >/dev/null 2>&1; then
+            ACTION=update
+          else
+            ACTION=create
+          fi
+          gcloud run jobs $ACTION recruitflow-ingest \
             --image=asia-south1-docker.pkg.dev/recruitflow-ai-500719/recruitflow/backend:${{ github.sha }} \
             --region=asia-south1 \
             --project=recruitflow-ai-500719 \
             --service-account=recruitflow-agents@recruitflow-ai-500719.iam.gserviceaccount.com \
             --set-cloudsql-instances=recruitflow-ai-500719:asia-south1:recruitflow-db \
             --env-vars-file=/tmp/prod-env-vars.yaml \
-            --memory=2Gi \
-            --command=/app/worker-entrypoint.sh \
-            --port=8080 \
-            --no-allow-unauthenticated
+            --command=python \
+            --args=-m,app.ingest_once \
+            --max-retries=3 \
+            --task-timeout=600
