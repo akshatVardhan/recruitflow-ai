@@ -32,9 +32,7 @@ class UserRateLimiter:
         while hits and now - hits[0] >= self.window_seconds:
             hits.popleft()
         if len(hits) >= self.limit:
-            retry_after = (
-                int(self.window_seconds - (now - hits[0])) + 1 if hits else 1
-            )
+            retry_after = int(self.window_seconds - (now - hits[0])) + 1 if hits else 1
             raise HTTPException(
                 status_code=429,
                 detail="Too many ingestion requests; try again shortly",

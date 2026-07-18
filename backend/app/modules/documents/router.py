@@ -223,9 +223,7 @@ async def get_upload_status(
     return DocumentStatusResponse(**status)
 
 
-@router.post(
-    "/{document_id}/reingest", dependencies=[Depends(ingest_rate_limiter)]
-)
+@router.post("/{document_id}/reingest", dependencies=[Depends(ingest_rate_limiter)])
 async def reingest_document(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
