@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient, ASGITransport
@@ -92,18 +92,30 @@ async def test_upload_document_success():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         headers = await _auth_headers(client)
         client_id = await _owned_client_id(client, headers)
-        response = await client.post(
-            "/api/v1/documents/upload",
-            data={
-                "client_id": client_id,
-                "title": "Test Resume",
-                "doc_type": "resume",
-            },
-            files={"file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")},
-            headers=headers,
-        )
-        # Note: requires DB + MinIO to pass fully; validates schema/auth/ownership at minimum
-        assert response.status_code in (201, 422, 500)
+        with (
+            patch(
+                "app.modules.documents.router.trigger_ingestion",
+                new_callable=AsyncMock,
+            ) as mock_trigger,
+            patch(
+                "app.modules.documents.service.upload_file",
+                new_callable=AsyncMock,
+            ),
+        ):
+            response = await client.post(
+                "/api/v1/documents/upload",
+                data={
+                    "client_id": client_id,
+                    "title": "Test Resume",
+                    "doc_type": "resume",
+                },
+                files={
+                    "file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")
+                },
+                headers=headers,
+            )
+        assert response.status_code == 201
+        mock_trigger.assert_awaited_once_with(response.json()["id"])
 
 
 @pytest.mark.anyio
@@ -313,14 +325,17 @@ async def test_reingest_deletes_stale_chunks_and_vectors_before_requeue(db_sessi
                 "app.modules.documents.service.get_qdrant_client",
                 return_value=mock_qdrant,
             ),
-            patch("app.worker.ingest_document.delay") as mock_delay,
+            patch(
+                "app.modules.documents.router.trigger_ingestion",
+                new_callable=AsyncMock,
+            ) as mock_trigger,
         ):
             response = await client.post(
                 f"/api/v1/documents/{doc.id}/reingest", headers=headers
             )
 
         assert response.status_code == 200
-        mock_delay.assert_called_once_with(str(doc.id))
+        mock_trigger.assert_awaited_once_with(str(doc.id))
 
         mock_qdrant.delete.assert_called_once()
         _, kwargs = mock_qdrant.delete.call_args
@@ -329,3 +344,60 @@ async def test_reingest_deletes_stale_chunks_and_vectors_before_requeue(db_sessi
 
         remaining = await get_document_chunks(db_session, doc.id)
         assert remaining == []
+
+
+@pytest.mark.anyio
+async def test_upload_burst_past_rate_limit_returns_429(monkeypatch):
+    """RF-77: a burst of uploads past the per-user limit must get 429 instead
+    of dispatching more paid ingestion work."""
+    monkeypatch.setattr(documents_router.ingest_rate_limiter, "limit", 2)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        statuses = []
+        for _ in range(3):
+            response = await client.post(
+                "/api/v1/documents/upload",
+                data={
+                    "client_id": str(uuid.uuid4()),
+                    "title": "Burst",
+                    "doc_type": "resume",
+                },
+                files={
+                    "file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")
+                },
+                headers=headers,
+            )
+            statuses.append(response.status_code)
+        # The limiter runs before the handler body, so under-limit requests
+        # still reach the ownership check (404 for this random client_id);
+        # the request past the limit is cut off with 429.
+        assert statuses == [404, 404, 429]
+        assert "Retry-After" in response.headers
+
+
+@pytest.mark.anyio
+async def test_reingest_shares_upload_rate_limit(monkeypatch):
+    """RF-77: reingest dispatches the same paid ingestion work as upload, so
+    both endpoints draw from one shared per-user budget."""
+    monkeypatch.setattr(documents_router.ingest_rate_limiter, "limit", 1)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        first = await client.post(
+            "/api/v1/documents/upload",
+            data={
+                "client_id": str(uuid.uuid4()),
+                "title": "Burst",
+                "doc_type": "resume",
+            },
+            files={"file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")},
+            headers=headers,
+        )
+        # Past the limiter (404 from the ownership check), consuming the budget.
+        assert first.status_code == 404
+        second = await client.post(
+            f"/api/v1/documents/{uuid.uuid4()}/reingest", headers=headers
+        )
+        # Would be 404 (unknown document) if reingest had its own budget.
+        assert second.status_code == 429
