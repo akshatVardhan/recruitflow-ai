@@ -65,7 +65,17 @@ def ingest_document(self, document_id: str):
     Runs inside an async event loop since all pipeline steps are async.
     """
     try:
-        asyncio.run(_run_ingestion_pipeline(document_id))
+        final_status = asyncio.run(_run_ingestion_pipeline(document_id))
+        if final_status != "completed":
+            # Not an exception - _run_ingestion_pipeline already persisted
+            # doc.status="failed" itself (e.g. extraction yielded no text).
+            # Report that here too, so this task's own return value/logs
+            # don't claim "completed" for a document that's actually failed.
+            logger.error(
+                f"Ingestion did not complete for document {document_id}: "
+                f"status={final_status}"
+            )
+            return {"status": final_status, "document_id": document_id}
         logger.info(f"Ingestion complete for document {document_id}")
         return {"status": "completed", "document_id": document_id}
     except Exception as e:
@@ -98,7 +108,7 @@ async def _run_ingestion_pipeline(document_id: str):
             doc = result.scalar_one_or_none()
             if doc is None:
                 logger.error(f"Document {document_id} not found for ingestion")
-                return
+                return "not_found"
 
             try:
                 # 1. Extract text
@@ -109,7 +119,7 @@ async def _run_ingestion_pipeline(document_id: str):
                     logger.error(f"Extraction failed for document {document_id}")
                     doc.status = "failed"
                     await db.commit()
-                    return
+                    return "failed"
 
                 await db.refresh(doc)
 
@@ -125,7 +135,7 @@ async def _run_ingestion_pipeline(document_id: str):
                     logger.warning(f"No chunks generated for document {document_id}")
                     doc.status = "failed"
                     await db.commit()
-                    return
+                    return "failed"
 
                 client_id = str(doc.client_id)
                 doc_type = doc.doc_type
@@ -155,6 +165,7 @@ async def _run_ingestion_pipeline(document_id: str):
                 logger.info(
                     f"Stored {len(point_ids)} Qdrant points for document {document_id}"
                 )
+                return "completed"
             except Exception:
                 doc.status = "failed"
                 await db.commit()

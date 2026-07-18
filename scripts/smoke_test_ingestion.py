@@ -15,29 +15,33 @@ import sys
 import time
 import uuid
 
+import fitz  # PyMuPDF - same library app/modules/documents/extractor.py uses
 import httpx
 
 DEFAULT_BASE_URL = "https://recruitflow-backend-424745949201.asia-south1.run.app"
 
-# Same minimal-but-genuinely-valid PDF fixture as backend/tests/test_extraction.py -
-# real bytes the extractor can parse, so a failure here means the pipeline
-# actually broke, not that mock content got rejected.
-MINIMAL_PDF = (
-    b"%PDF-1.4\n"
-    b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
-    b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\n"
-    b"xref\n"
-    b"0 4\n"
-    b"0000000000 65535 f \n"
-    b"0000000009 00000 n \n"
-    b"0000000058 00000 n \n"
-    b"0000000115 00000 n \n"
-    b"trailer<</Size 4/Root 1 0 R>>\n"
-    b"startxref\n"
-    b"190\n"
-    b"%%EOF"
-)
+
+def _build_pdf_with_real_text() -> bytes:
+    """A one-page PDF with an actual text content stream.
+
+    The byte fixture this used to hardcode (borrowed from
+    backend/tests/test_extraction.py) has no /Contents stream at all - that
+    test's own comment says as much: "A minimal PDF with no text content
+    should return empty string". Using it here meant every smoke-test
+    document was *guaranteed* to fail extraction (0 chars) regardless of
+    whether the worker pipeline was healthy, masking real fixes behind a
+    fake failure. Build a real page with fitz instead, so a failure here
+    means the pipeline actually broke.
+    """
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "RecruitFlow smoke test document.")
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+MINIMAL_PDF = _build_pdf_with_real_text()
 
 
 def run(base_url: str, timeout: float) -> bool:

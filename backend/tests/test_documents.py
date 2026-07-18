@@ -158,6 +158,26 @@ async def test_upload_document_rejects_mismatched_mime_type():
 
 
 @pytest.mark.anyio
+async def test_upload_document_rejects_fake_pdf_with_correct_extension_and_mime():
+    """RF-59 follow-up: extension and Content-Type are both client-supplied
+    and can be spoofed together (rename a file, send a matching fake
+    header) - magic-byte sniffing on the real content must still catch it."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = await _auth_headers(client)
+        client_id = await _owned_client_id(client, headers)
+        response = await client.post(
+            "/api/v1/documents/upload",
+            data={"client_id": client_id, "title": "Fake PDF", "doc_type": "resume"},
+            files={
+                "file": ("resume.pdf", b"just plain text, not a pdf", "application/pdf")
+            },
+            headers=headers,
+        )
+        assert response.status_code == 415
+
+
+@pytest.mark.anyio
 async def test_upload_document_rejects_unowned_client():
     """POST /upload with a client_id belonging to a different user should 404, not 201."""
     transport = ASGITransport(app=app)
