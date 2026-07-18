@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient, ASGITransport
@@ -92,18 +92,30 @@ async def test_upload_document_success():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         headers = await _auth_headers(client)
         client_id = await _owned_client_id(client, headers)
-        response = await client.post(
-            "/api/v1/documents/upload",
-            data={
-                "client_id": client_id,
-                "title": "Test Resume",
-                "doc_type": "resume",
-            },
-            files={"file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")},
-            headers=headers,
-        )
-        # Note: requires DB + MinIO to pass fully; validates schema/auth/ownership at minimum
-        assert response.status_code in (201, 422, 500)
+        with (
+            patch(
+                "app.modules.documents.router.trigger_ingestion",
+                new_callable=AsyncMock,
+            ) as mock_trigger,
+            patch(
+                "app.modules.documents.service.upload_file",
+                new_callable=AsyncMock,
+            ),
+        ):
+            response = await client.post(
+                "/api/v1/documents/upload",
+                data={
+                    "client_id": client_id,
+                    "title": "Test Resume",
+                    "doc_type": "resume",
+                },
+                files={
+                    "file": ("test.pdf", b"%PDF-1.4 mock content", "application/pdf")
+                },
+                headers=headers,
+            )
+        assert response.status_code == 201
+        mock_trigger.assert_awaited_once_with(response.json()["id"])
 
 
 @pytest.mark.anyio
@@ -313,14 +325,17 @@ async def test_reingest_deletes_stale_chunks_and_vectors_before_requeue(db_sessi
                 "app.modules.documents.service.get_qdrant_client",
                 return_value=mock_qdrant,
             ),
-            patch("app.worker.ingest_document.delay") as mock_delay,
+            patch(
+                "app.modules.documents.router.trigger_ingestion",
+                new_callable=AsyncMock,
+            ) as mock_trigger,
         ):
             response = await client.post(
                 f"/api/v1/documents/{doc.id}/reingest", headers=headers
             )
 
         assert response.status_code == 200
-        mock_delay.assert_called_once_with(str(doc.id))
+        mock_trigger.assert_awaited_once_with(str(doc.id))
 
         mock_qdrant.delete.assert_called_once()
         _, kwargs = mock_qdrant.delete.call_args

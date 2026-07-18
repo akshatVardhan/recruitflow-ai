@@ -41,6 +41,14 @@ class Settings(BaseSettings):
 
     sentry_dsn_backend: str = ""
 
+    # RF-92: which GCP project/region/job to invoke for ingestion. Empty
+    # gcp_project_id (the default, and what local/test use) means
+    # trigger_ingestion() calls the pipeline directly in-process instead of
+    # dispatching a real Cloud Run Job - see app/core/ingestion_trigger.py.
+    gcp_project_id: str = ""
+    gcp_region: str = "asia-south1"
+    ingest_job_name: str = "recruitflow-ingest"
+
     deepinfra_api_key: str = ""
     proxycurl_api_key: str = ""
 

@@ -629,3 +629,53 @@ any background-consumer workload (Celery, Cloud Tasks handlers,
 etc.), not something specific to this codebase. Revisit only if
 ingestion moves off a long-lived Cloud Run Service consumer
 entirely (e.g. the Cloud Run Job redesign floated in ADR-013).
+
+## ADR-016 - Retire Celery/Redis Worker for Cloud Run Jobs (supersedes ADR-013, ADR-015)
+Date: 2026-07-13
+Status: Accepted
+Agent: Implementer (Claude Code), RF-92
+
+Decision:
+`recruitflow-worker` (the always-on Celery/Redis polling Service) is
+retired. Ingestion is now dispatched via `recruitflow-ingest`, a Cloud Run
+Job invoked directly per upload through the Cloud Run Admin API
+(`app/core/ingestion_trigger.py`), running `python -m app.ingest_once`
+against the same backend image. Celery and Redis (Upstash) are fully
+removed from the ingestion path - see RF-92's task list for the exact
+files removed.
+
+Reasoning:
+ADR-013 (`--min-instances=1`) and ADR-015 (`--no-cpu-throttling`) fixed
+RF-89/91's reliability bugs but cost an estimated ~₹8,500/month - roughly
+8.5x the project's standing ₹1000/month GCP budget cap, discovered and
+confirmed by the owner on 2026-07-12. Both were accepted live, mid-incident,
+without checking the budget - a process gap now called out explicitly in
+`.agents/roles/implementer.md`'s cost-affecting-changes rule.
+
+The root cause is structural, not a tuning problem: Celery consumes jobs by
+continuously polling a Redis broker, which requires an always-on,
+always-listening instance - fundamentally incompatible with Cloud Run's
+scale-to-zero pricing model at any flag setting. Cloud Run Jobs, invoked
+directly from the upload endpoint, remove the always-on requirement
+entirely: no broker, no polling consumer, pay only for actual execution
+seconds. At the confirmed volume (~100 docs/month), this is estimated at
+~₹30-60/month.
+
+A push-based alternative (Cloud Tasks -> authenticated Cloud Run Service)
+was considered and rejected for now: it would add a new GCP product (a
+queue) and a new authenticated internal HTTP endpoint's attack surface for
+retry/backoff sophistication this project doesn't need at its current
+volume. Revisit if volume grows enough that Cloud Run Jobs' coarser
+whole-container retry (vs Cloud Tasks' configurable backoff) becomes a
+real problem.
+
+Consequences:
+Ingestion now cold-starts on every single document (no warm-instance reuse
+across bursts) - acceptable at current volume, and specifically *desired*
+behavior for a pay-per-execution resource (a warm Job would just be a
+Service with extra steps). RF-91's CPU-throttling bug cannot recur:
+Cloud Run Jobs always get full CPU during their run, unlike a Service
+under default throttling. If ingestion volume grows enough that per-upload
+cold start latency or Cloud Run Jobs' retry model becomes limiting, the
+Cloud Tasks alternative above is the documented next step, not another
+tuning pass on Job flags.
