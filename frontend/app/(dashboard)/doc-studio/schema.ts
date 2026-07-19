@@ -27,6 +27,14 @@ export const queueFormSchema = z.object({
 export type MetadataItemValues = z.infer<typeof metadataItemSchema>
 export type QueueFormValues = z.infer<typeof queueFormSchema>
 
-export type UploadStatus = "queued" | "uploading" | "completed" | "failed"
+export type UploadStatus =
+  | "queued"
+  | "uploading"
+  | "uploaded"
+  | "extracting"
+  | "chunking"
+  | "embedding"
+  | "completed"
+  | "failed"
 
 export const DOC_TYPE_OPTIONS = DOC_TYPE_VALUES
