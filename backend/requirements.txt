@@ -26,5 +26,5 @@ litellm==1.90.2
 llama-index-core==0.14.23
 ruff==0.6.4
 black==26.5.1
-mypy==1.11.2
+mypy==2.3.0
 pip-audit==2.10.1
