@@ -149,6 +149,13 @@ jobs:
         # roles/run.developer at the project level (includes run.jobs.run),
         # so recruitflow-backend can invoke this job with no further IAM
         # grant - verified live 2026-07-13, do not add a speculative grant.
+        # --memory=2Gi: this step never set --memory before, so every
+        # execution silently ran at the Jobs default of 512Mi and OOM'd
+        # (confirmed via `gcloud logging read` on recruitflow-ingest
+        # executions, every run since the RF-92 promotion) - same
+        # torch/transformers/sentence-transformers baseline footprint as
+        # the service deploy step above, since this Job runs the same
+        # image's ingestion code path.
         run: |
           if gcloud run jobs describe recruitflow-ingest --region=asia-south1 --project=recruitflow-ai-500719 >/dev/null 2>&1; then
             ACTION=update
@@ -165,4 +172,5 @@ jobs:
             --command=python \
             --args=-m,app.ingest_once \
             --max-retries=3 \
-            --task-timeout=600
+            --task-timeout=600 \
+            --memory=2Gi
