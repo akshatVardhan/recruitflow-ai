@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { useDocumentStatusPolling, isNotFoundError } from "@/lib/hooks/use-document-status"
 import { DOC_TYPE_OPTIONS, type QueueFormValues, type UploadStatus } from "../schema"
 
 interface UploadMetadataRowProps {
@@ -15,35 +16,50 @@ interface UploadMetadataRowProps {
   register: UseFormRegister<QueueFormValues>
   fileName: string
   status: UploadStatus
+  documentId?: string
   error?: string
   onRemove: () => void
   disabled: boolean
 }
 
+const INGESTION_STAGES = new Set<UploadStatus>(["uploaded", "extracting", "chunking", "embedding"])
+
+const STAGE_LABELS: Record<UploadStatus, string> = {
+  queued: "Queued",
+  uploading: "Uploading",
+  uploaded: "Uploaded",
+  extracting: "Extracting",
+  chunking: "Chunking",
+  embedding: "Embedding",
+  completed: "Completed",
+  failed: "Failed",
+}
+
 function statusBadge(status: UploadStatus) {
+  const label = STAGE_LABELS[status]
   switch (status) {
-    case "uploading":
-      return (
-        <Badge variant="secondary" aria-label="Status: uploading">
-          Uploading
-        </Badge>
-      )
     case "completed":
       return (
-        <Badge variant="success" aria-label="Status: completed">
-          Completed
+        <Badge variant="success" aria-label={`Status: ${label}`}>
+          {label}
         </Badge>
       )
     case "failed":
       return (
-        <Badge variant="destructive" aria-label="Status: failed">
-          Failed
+        <Badge variant="destructive" aria-label={`Status: ${label}`}>
+          {label}
+        </Badge>
+      )
+    case "queued":
+      return (
+        <Badge variant="outline" aria-label={`Status: ${label}`}>
+          {label}
         </Badge>
       )
     default:
       return (
-        <Badge variant="outline" aria-label="Status: queued">
-          Queued
+        <Badge variant="secondary" aria-label={`Status: ${label}`}>
+          {label}
         </Badge>
       )
   }
@@ -54,11 +70,23 @@ export function UploadMetadataRow({
   control,
   register,
   fileName,
-  status,
+  status: localStatus,
+  documentId,
   error,
   onRemove,
   disabled,
 }: UploadMetadataRowProps) {
+  const polled = useDocumentStatusPolling(documentId)
+  // Once a document id exists the upload HTTP call already succeeded -
+  // display the real backend ingestion stage instead of the local status,
+  // falling back to "uploaded" until the first poll resolves. A 404 means
+  // the document is gone server-side; treat that as a terminal failure.
+  const status: UploadStatus = documentId
+    ? isNotFoundError(polled.error)
+      ? "failed"
+      : ((polled.data?.status as UploadStatus | undefined) ?? "uploaded")
+    : localStatus
+
   return (
     <div
       className="rounded-md border border-border bg-card p-4"
@@ -89,6 +117,13 @@ export function UploadMetadataRow({
           </button>
         </div>
       </div>
+
+      {INGESTION_STAGES.has(status) ? (
+        <div
+          className="mb-3 h-1.5 w-full animate-pulse rounded-full bg-muted"
+          data-testid={`row-ingestion-skeleton-${index}`}
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="space-y-1.5">
