@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import type { UploadMetadata, UploadResponse } from "@/types/api"
+import type { DocumentStatusResponse, UploadMetadata, UploadResponse } from "@/types/api"
 
 const UPLOAD_PATH = "/api/v1/documents/upload"
 
@@ -21,5 +21,11 @@ export async function uploadDocument(
   const { data } = await api.post<UploadResponse>(UPLOAD_PATH, form, {
     headers: { "Content-Type": "multipart/form-data" },
   })
+  return data
+}
+
+/** Fetches the current ingestion status for a previously uploaded document. */
+export async function getDocumentStatus(id: string): Promise<DocumentStatusResponse> {
+  const { data } = await api.get<DocumentStatusResponse>(`/api/v1/documents/${id}/status`)
   return data
 }
