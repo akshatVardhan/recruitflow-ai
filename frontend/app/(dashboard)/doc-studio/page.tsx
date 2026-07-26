@@ -76,6 +76,9 @@ export default function DocStudioPage() {
   })
 
   const [status, setStatus] = React.useState<Record<string, UploadStatus>>({})
+  // Maps field id -> backend document id, captured once the upload POST
+  // succeeds, so each row can poll its own ingestion status (RF-29).
+  const [documentIds, setDocumentIds] = React.useState<Record<string, string>>({})
   const [submitting, setSubmitting] = React.useState(false)
 
   const [clients, setClients] = React.useState<Client[]>([])
@@ -148,6 +151,11 @@ export default function DocStudioPage() {
         delete next[id]
         return next
       })
+      setDocumentIds((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
     },
     [remove]
   )
@@ -158,12 +166,13 @@ export default function DocStudioPage() {
     setSubmitting(true)
     let succeeded = 0
     let failed = 0
-    const completedIndices: number[] = []
 
     for (let i = 0; i < fields.length; i++) {
       const fieldId = fields[i].id
-      // Skip already completed rows (e.g. partial retry).
-      if (status[fieldId] === "completed") continue
+      // Skip rows that already uploaded successfully (queued/failed rows
+      // are retried; anything past "uploading" has a document id and is
+      // tracked by its own status poll instead).
+      if (status[fieldId] && status[fieldId] !== "failed") continue
       const item = items[i]
       const file = item?.file
       if (!file) {
@@ -173,19 +182,19 @@ export default function DocStudioPage() {
       }
       setStatus((p) => ({ ...p, [fieldId]: "uploading" }))
       try {
-        await uploadDocument(file, {
+        const document = await uploadDocument(file, {
           title: item.title,
           doc_type: item.doc_type,
           client_id: item.client_id,
         })
-        setStatus((p) => ({ ...p, [fieldId]: "completed" }))
+        setStatus((p) => ({ ...p, [fieldId]: "uploaded" }))
+        setDocumentIds((p) => ({ ...p, [fieldId]: document.id }))
         toast({
           variant: "success",
           title: "Document uploaded",
-          description: `${item.title} uploaded successfully.`,
+          description: `${item.title} uploaded successfully. Processing...`,
         })
         succeeded++
-        completedIndices.push(i)
       } catch (err) {
         setStatus((p) => ({ ...p, [fieldId]: "failed" }))
         failed++
@@ -196,19 +205,6 @@ export default function DocStudioPage() {
           duration: 8000,
         })
       }
-    }
-
-    // Remove completed files from the queue (newest-settled first so
-    // earlier indices remain valid during removal).
-    completedIndices.sort((a, b) => b - a)
-    for (const idx of completedIndices) {
-      const fieldId = fields[idx].id
-      remove(idx)
-      setStatus((prev) => {
-        const next = { ...prev }
-        delete next[fieldId]
-        return next
-      })
     }
 
     setSubmitting(false)
@@ -269,6 +265,7 @@ export default function DocStudioPage() {
                   register={register}
                   fileName={field.file?.name ?? "Untitled"}
                   status={status[field.id] ?? "queued"}
+                  documentId={documentIds[field.id]}
                   error={firstRowError(errors, index)}
                   onRemove={() => handleRemove(index, field.id)}
                   disabled={submitting}
@@ -285,6 +282,7 @@ export default function DocStudioPage() {
                 onClick={() => {
                   replace([])
                   setStatus({})
+                  setDocumentIds({})
                 }}
                 disabled={submitting || inProgress}
                 data-testid="clear-queue"

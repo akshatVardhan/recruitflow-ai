@@ -79,6 +79,14 @@ export interface UploadResponse {
   created_at: string
 }
 
+export interface DocumentStatusResponse {
+  id: string
+  title: string
+  doc_type: string
+  status: string
+  created_at: string
+}
+
 export interface Document {
   id: string
   client_id: string

@@ -46,7 +46,9 @@ jobs:
         run: npx prettier --check .
 
       - name: npm audit
-        run: npm audit --audit-level=high
+        # Waivers (mirrors backend.yml's pip-audit --ignore-vuln pattern) are
+        # tracked in scripts/check-audit-waivers.mjs, each with a JIRA key.
+        run: node scripts/check-audit-waivers.mjs
 
       - name: Vitest run
         run: npx vitest run
