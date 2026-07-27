@@ -9,7 +9,7 @@ and HR documents.
   <img alt="Python" src="https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white" />
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white" />
   <img alt="SQLAlchemy" src="https://img.shields.io/badge/SQLAlchemy-2.x-D71F00?logo=sqlalchemy&logoColor=white" />
-  <img alt="Celery" src="https://img.shields.io/badge/Celery-async%20tasks-37814A?logo=celery&logoColor=white" />
+  <img alt="Cloud Run Jobs" src="https://img.shields.io/badge/Cloud%20Run%20Jobs-async%20ingestion-4285F4?logo=googlecloud&logoColor=white" />
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white" />
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
@@ -18,7 +18,6 @@ and HR documents.
 </p>
 <p>
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white" />
-  <img alt="Redis" src="https://img.shields.io/badge/Redis-cache%20%26%20broker-DC382D?logo=redis&logoColor=white" />
   <img alt="Qdrant" src="https://img.shields.io/badge/Qdrant-vector%20DB-DC244C?logo=qdrant&logoColor=white" />
   <img alt="MinIO" src="https://img.shields.io/badge/MinIO-dev%20storage-C72E49?logo=minio&logoColor=white" />
   <img alt="LiteLLM" src="https://img.shields.io/badge/LiteLLM-GLM%205.2%20via%20DeepInfra-6E56CF" />
@@ -56,8 +55,8 @@ workspace instead of a pile of spreadsheets and email threads.
 
 Feature areas map to backend modules under `backend/app/modules/` and
 frontend routes under `frontend/app/(dashboard)/`. Status reflects the
-current build, not the final scope - see `.agents/progress.md` (private
-companion repo) for day-to-day tracking.
+current build, not the final scope - see `.agents/progress-current.md`
+(private companion repo) for day-to-day tracking.
 
 | Area | What it does | Status |
 |---|---|---|
@@ -76,16 +75,16 @@ deployment can serve multiple staffing firms without their data mixing.
 ## Tech Stack
 
 **Backend** - Python 3.13, FastAPI, SQLAlchemy 2.x (async), Alembic
-migrations, Celery + Redis for async workloads, Argon2 password hashing,
-JWT auth, PyMuPDF/python-docx for document parsing.
+migrations, Cloud Run Jobs for async workloads (document ingestion),
+Argon2 password hashing, JWT auth, PyMuPDF/python-docx for document
+parsing.
 
 **Frontend** - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS,
 shadcn/ui + Radix primitives, TanStack React Query, React Hook Form + Zod.
 
-**Data & Storage** - PostgreSQL 15 (Cloud SQL in prod), Redis (cache +
-Celery broker/backend), Qdrant (vector search), MinIO (dev file storage) /
-GCP Cloud Storage (prod file storage), both behind the same S3-compatible
-boto3 interface.
+**Data & Storage** - PostgreSQL 15 (Cloud SQL in prod), Qdrant (vector
+search), MinIO (dev file storage) / GCP Cloud Storage (prod file storage),
+both behind the same S3-compatible boto3 interface.
 
 **AI / RAG** - LlamaIndex for document ingestion, chunking, and retrieval;
 Sentence Transformers (`BAAI/bge-small-en-v1.5`) for local embeddings;
@@ -101,15 +100,18 @@ Cloud Run deploy on push to `main`).
 See [`docs/ADR.md`](docs/ADR.md) for the reasoning behind each of these
 choices (modular monolith over microservices, LlamaIndex over LangChain,
 local embeddings over a paid embeddings API, LiteLLM as the provider
-abstraction, MinIO/GCS split, Redis/Qdrant hosting).
+abstraction, MinIO/GCS split, Cloud Run Jobs over a Celery/Redis worker,
+Qdrant hosting).
 
 ## Architecture
 
 Backend is a modular monolith (one FastAPI process, module boundaries
 clean enough to extract into services later if needed) rather than
-microservices - overkill for the current team size and scale. Celery
-handles anything that shouldn't block a request (document processing,
-embedding generation, AI generation jobs). All LLM calls funnel through
+microservices - overkill for the current team size and scale. Anything
+that shouldn't block a request (document processing, embedding
+generation) is dispatched to `recruitflow-ingest`, a Cloud Run Job
+invoked directly per upload (no message broker or always-on worker;
+see ADR-016). All LLM calls funnel through
 `core/llm.py`; all object storage funnels through `core/storage.py`'s
 S3-compatible interface so dev (MinIO) and prod (GCS) need no code changes,
 only different credentials/endpoints via Doppler.

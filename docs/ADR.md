@@ -71,7 +71,11 @@ for HR document search.
 
 Tradeoff accepted:
 Slightly lower retrieval quality than Voyage AI voyage-3. Cold start on
-Cloud Run loads the model (~500MB). Mitigated by Cloud Run min-instances=1.
+Cloud Run loads the model (~500MB); ADR-014 pre-bakes the model weights
+into the image to cut that cost. `recruitflow-backend` does not currently
+run with `--min-instances=1` (no `minScale` on the live service, no
+`--min-instances` flag in `backend-deploy.yml`'s deploy step) - tracked
+as an open gap under RF-9, not yet mitigated at the infra level.
 
 ---
 
@@ -364,8 +368,9 @@ to users who interact with the software over a network - relevant here
 since RecruitFlow is a network-accessed SaaS product, not
 locally-distributed software. However: this repository is already
 public (a deliberate decision made 2026-07-03, verified via a full git
-history secret scan before doing so - see progress.md's "Pre-Publication
-Git History Secret Scan" section), meaning the actual source code AGPL
+history secret scan before doing so - see progress-current.md's
+"Pre-Publication Git History Secret Scan" section), meaning the actual
+source code AGPL
 cares about making available is already available, to anyone, not just
 to users of the deployed service. This substantially satisfies AGPL's
 practical intent even if it doesn't tick every formal compliance box a
@@ -446,8 +451,15 @@ the resulting schema is wrong in a way alembic couldn't catch):
    (the schema is likely already forward-migrated and the old code may
    not be compatible with it).
 3. In both cases, a fixed job name (recruitflow-migrate) and fixed
-   service names mean no lookup is needed - the names above are the
-   only ones that exist in this project.
+   service names mean no lookup is needed for these two.
+
+   (Update, ADR-016/RF-92: this is no longer the complete list of Jobs in
+   the project - `recruitflow-ingest` was added as a second persistent
+   Cloud Run Job for document ingestion. Two other Jobs from the pre-RF-73
+   per-SHA migration-job scheme, `migrate-6db985f3...` and
+   `migrate-babf2063...`, also still exist live as orphaned leftovers,
+   last run 2026-07-10, superseded same-day by this single persistent
+   `recruitflow-migrate` job - not cleaned up.)
 
 ---
 
@@ -494,7 +506,7 @@ Any *future* CI/CD job needing GCP access in this project should use
 WIF the same way, not attempt an SA key - the org policy blocks it
 project-wide, not just for this one service account. Discovered as
 one of a 7-bug chain the first time the full deploy pipeline was
-actually run end-to-end (see `progress.md`'s "Main Branch State" /
+actually run end-to-end (see `progress-current.md`'s "Main Branch State" /
 RF-54 entry in the agents-repo for the other 6: `workflow_dispatch`
 trigger, runner disk space, Doppler installer sudo, Cloud Run
 self-actAs IAM grant, 2GiB memory bump, migration job service account -
@@ -505,7 +517,9 @@ don't get their own ADR entries).
 
 ## ADR-013 - Worker Service Needs min-instances=1, Not Scale-to-Zero
 Date: 2026-07-12
-Status: Accepted
+Status: Superseded by ADR-016 (2026-07-13) - `recruitflow-worker` no longer
+exists; kept below as the historical record of why it was configured this
+way while it did.
 Agent: DevOps Eng (Claude Code), discovered while closing out RF-55
 
 Decision:
@@ -590,7 +604,9 @@ with model size.
 
 ## ADR-015 - Worker Service Needs --no-cpu-throttling, Not Just min-instances=1
 Date: 2026-07-12
-Status: Accepted
+Status: Superseded by ADR-016 (2026-07-13) - `recruitflow-worker` no longer
+exists; kept below as the historical record of why it was configured this
+way while it did.
 Agent: DevOps Eng (Claude Code), discovered while live-verifying RF-89
 
 Decision:
