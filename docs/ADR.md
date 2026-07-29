@@ -74,8 +74,9 @@ Slightly lower retrieval quality than Voyage AI voyage-3. Cold start on
 Cloud Run loads the model (~500MB); ADR-014 pre-bakes the model weights
 into the image to cut that cost. `recruitflow-backend` does not currently
 run with `--min-instances=1` (no `minScale` on the live service, no
-`--min-instances` flag in `backend-deploy.yml`'s deploy step) - tracked
-as an open gap under RF-9, not yet mitigated at the infra level.
+`--min-instances` flag in `backend-deploy.yml`'s deploy step) - RF-9
+incorrectly claimed this was done; the actual fix is tracked as RF-99,
+not yet mitigated at the infra level.
 
 ---
 
@@ -459,7 +460,7 @@ the resulting schema is wrong in a way alembic couldn't catch):
    per-SHA migration-job scheme, `migrate-6db985f3...` and
    `migrate-babf2063...`, also still exist live as orphaned leftovers,
    last run 2026-07-10, superseded same-day by this single persistent
-   `recruitflow-migrate` job - not cleaned up.)
+   `recruitflow-migrate` job - not cleaned up, tracked as RF-100.)
 
 ---
 
