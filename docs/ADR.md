@@ -197,7 +197,8 @@ old key before the new one is confirmed working end-to-end.
 
 ## ADR-007 - Upstash for Redis, Qdrant Cloud for Qdrant (dev and prod, both environments)
 Date: 2026-07-06
-Status: Accepted
+Status: Partially superseded (see Amendment, 2026-08-04) - the Qdrant Cloud
+provider choice is still active; the Redis/Celery broker portion is not.
 Agent: Backend Dev / DevOps Eng
 
 Decision:
@@ -253,6 +254,15 @@ RF-54's agent-run-log.md entry for the full prod-deploy fix chain this
 required (Workload Identity Federation, Cloud Run memory sizing, etc.)
 - out of scope for this ADR, which is about the provider choice, not
 the deploy pipeline.
+
+Amendment (2026-08-04): RF-92 (ADR-016, 2026-07-13) retired Celery and its
+Upstash Redis broker/result backend entirely - ingestion no longer uses a
+message queue at all, dispatching directly to a Cloud Run Job instead. The
+REDIS_URL Doppler secret was removed from all three environments as part of
+RF-95. Everything above about Redis is historical - only the Qdrant Cloud
+provider choice (and its Frankfurt-region reasoning) is still in effect.
+ADR-013 and ADR-015 were marked superseded when RF-92 landed; this one was
+missed at the time.
 
 ---
 
