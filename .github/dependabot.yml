@@ -5,3 +5,13 @@ updates:
     target-branch: "staging"
     schedule:
       interval: "weekly"
+    groups:
+      # boto3 pins an exact matching botocore, so a split pair fails pip
+      # resolution: whichever PR lands first leaves the other pinned to an
+      # incompatible version. Dependabot opened them separately three times
+      # (#149/#150 in both the 2026-08-03 and 2026-08-04 cycles), each time
+      # needing a manual consolidation. Grouping makes them one PR.
+      aws-sdk:
+        patterns:
+          - "boto3"
+          - "botocore"
