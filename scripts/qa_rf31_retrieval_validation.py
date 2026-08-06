@@ -102,7 +102,7 @@ def run(base_url: str, timeout: float) -> bool:
             "Kubernetes distributed systems platform engineer.", timeout,
         )
         print("[rf31] uploading tenant B resume (pastry chef/watercolor)")
-        doc_b = upload_and_wait(
+        upload_and_wait(
             client, tenant_b, marker_b,
             "Pastry chef with a watercolor painting hobby.", timeout,
         )

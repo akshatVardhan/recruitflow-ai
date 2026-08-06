@@ -1,0 +1,14 @@
+# The repo had no ruff config, so `ruff check backend/` ran on whatever ruff's
+# built-in defaults happened to be - E4/E7/E9 + F through 0.6.4. Ruff 0.16.1
+# widened those defaults substantially (I, B, UP, SIM, BLE, TRY, PL, RUF, ...),
+# turning a routine version bump into 134 findings.
+#
+# Pinning the previous set keeps the linter's meaning stable across upgrades
+# rather than letting it drift with each release. Adopting the wider set is a
+# real code change and belongs in its own pass, not a dependency bump - the PR
+# that added this file lists the current breakdown.
+#
+# Lives at the repo root, not backend/, so the pre-commit hook (which runs over
+# scripts/ too) and CI (`ruff check backend/`) resolve the same rule set.
+[lint]
+select = ["E4", "E7", "E9", "F"]
