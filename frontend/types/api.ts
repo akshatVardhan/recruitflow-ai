@@ -87,6 +87,43 @@ export interface DocumentStatusResponse {
   created_at: string
 }
 
+/**
+ * Structured metadata produced by the auto-tagger (backend AutoTags model).
+ * Every field is best-effort - the LLM returns nulls when it can't find a
+ * value, and a tagging failure persists an all-defaults object rather than
+ * failing the document, so nothing here is guaranteed to be populated.
+ */
+export interface AutoTags {
+  document_type?: string | null
+  candidate_name?: string | null
+  role?: string | null
+  company?: string | null
+  skills?: string[] | null
+  date?: string | null
+}
+
+/**
+ * Full document record from GET /api/v1/documents/{id}.
+ * Mirrors the backend's DocumentDetailResponse.
+ */
+export interface DocumentDetail {
+  id: string
+  client_id: string
+  user_id: string
+  title: string
+  doc_type: string
+  file_name: string
+  file_size_kb: number | null
+  mime_type: string | null
+  status: string
+  extracted_text: string | null
+  auto_tags: AutoTags | null
+  manual_tags: string[] | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
 export interface Document {
   id: string
   client_id: string

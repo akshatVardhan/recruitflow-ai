@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 
 const postMock = vi.fn()
+const getMock = vi.fn()
 vi.mock("@/lib/api", () => ({
-  default: { post: (...args: unknown[]) => postMock(...args) },
+  default: {
+    post: (...args: unknown[]) => postMock(...args),
+    get: (...args: unknown[]) => getMock(...args),
+  },
 }))
 
-import { uploadDocument } from "./documents"
+import { getDocument, uploadDocument } from "./documents"
 
 describe("uploadDocument", () => {
   beforeEach(() => {
@@ -60,5 +64,38 @@ describe("uploadDocument", () => {
         client_id: "default",
       })
     ).rejects.toThrow("boom")
+  })
+})
+
+describe("getDocument", () => {
+  beforeEach(() => {
+    getMock.mockReset()
+  })
+
+  it("fetches a single document by id", async () => {
+    getMock.mockResolvedValueOnce({
+      data: {
+        id: "doc-1",
+        title: "My resume",
+        doc_type: "resume",
+        file_name: "resume.pdf",
+        status: "completed",
+        extracted_text: "hello",
+        auto_tags: { skills: ["Python"] },
+      },
+    })
+
+    const result = await getDocument("doc-1")
+
+    expect(getMock).toHaveBeenCalledWith("/api/v1/documents/doc-1")
+    expect(result.id).toBe("doc-1")
+    expect(result.extracted_text).toBe("hello")
+  })
+
+  it("propagates a 404 for a missing or unowned document", async () => {
+    getMock.mockRejectedValueOnce(
+      Object.assign(new Error("Not Found"), { isAxiosError: true, response: { status: 404 } })
+    )
+    await expect(getDocument("doc-missing")).rejects.toThrow("Not Found")
   })
 })

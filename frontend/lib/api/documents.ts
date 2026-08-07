@@ -1,5 +1,10 @@
 import api from "@/lib/api"
-import type { DocumentStatusResponse, UploadMetadata, UploadResponse } from "@/types/api"
+import type {
+  DocumentDetail,
+  DocumentStatusResponse,
+  UploadMetadata,
+  UploadResponse,
+} from "@/types/api"
 
 const UPLOAD_PATH = "/api/v1/documents/upload"
 
@@ -27,5 +32,16 @@ export async function uploadDocument(
 /** Fetches the current ingestion status for a previously uploaded document. */
 export async function getDocumentStatus(id: string): Promise<DocumentStatusResponse> {
   const { data } = await api.get<DocumentStatusResponse>(`/api/v1/documents/${id}/status`)
+  return data
+}
+
+/**
+ * Fetches a single document in full, including its extracted text.
+ * The backend scopes this to the caller and 404s (not 403s) on a document
+ * they don't own, so a missing document and a forbidden one are
+ * indistinguishable here by design.
+ */
+export async function getDocument(id: string): Promise<DocumentDetail> {
+  const { data } = await api.get<DocumentDetail>(`/api/v1/documents/${id}`)
   return data
 }
